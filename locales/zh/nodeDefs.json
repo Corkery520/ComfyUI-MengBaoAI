@@ -1,0 +1,41 @@
+{
+  "WANGImageAPI": {
+    "display_name": "萌宝图像 API",
+    "description": "使用 TT Image 与 Nano Banana 模型生成和编辑图像。",
+    "inputs": {
+      "prompt": { "name": "提示词" },
+      "connection_json": { "name": "连接 JSON" },
+      "api_key": { "name": "API 密钥" },
+      "model_type": { "name": "模型" },
+      "batch_size": { "name": "生成数量" },
+      "tt2_size": { "name": "旧版尺寸" },
+      "tt2_aspect_ratio": { "name": "图片比例" },
+      "tt2_resolution": { "name": "分辨率" },
+      "tt2_background": { "name": "背景" },
+      "tt2_quality": { "name": "图片质量" },
+      "tt25_version": { "name": "模型版本" },
+      "tt25_aspect_ratio": { "name": "图片比例" },
+      "tt25_resolution": { "name": "分辨率" },
+      "tt25_quality": { "name": "图片质量" },
+      "tt25_background": { "name": "背景" },
+      "banana2_aspect_ratio": { "name": "图片比例" },
+      "banana2_image_size": { "name": "图像尺寸" },
+      "banana2_thinking_level": { "name": "思考等级" },
+      "banana_pro_aspect_ratio": { "name": "图片比例" },
+      "banana_pro_image_size": { "name": "图像尺寸" },
+      "timeout": { "name": "超时时间（秒）" },
+      "retries": { "name": "重试次数" },
+      "ui_language": { "name": "界面语言" },
+      "image_1": { "name": "参考图 1" },
+      "image_2": { "name": "参考图 2" },
+      "image_3": { "name": "参考图 3" },
+      "image_4": { "name": "参考图 4" },
+      "image_5": { "name": "参考图 5" }
+    },
+    "outputs": {
+      "0": { "name": "图像" },
+      "1": { "name": "响应文本" },
+      "2": { "name": "失败 URL" }
+    }
+  }
+}

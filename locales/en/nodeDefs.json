@@ -1,0 +1,41 @@
+{
+  "WANGImageAPI": {
+    "display_name": "MengBao-Image-API",
+    "description": "Generate and edit images with TT Image and Nano Banana models.",
+    "inputs": {
+      "prompt": { "name": "Prompt" },
+      "connection_json": { "name": "Connection JSON" },
+      "api_key": { "name": "API Key" },
+      "model_type": { "name": "Model" },
+      "batch_size": { "name": "Batch Size" },
+      "tt2_size": { "name": "Legacy Size" },
+      "tt2_aspect_ratio": { "name": "Aspect Ratio" },
+      "tt2_resolution": { "name": "Resolution" },
+      "tt2_background": { "name": "Background" },
+      "tt2_quality": { "name": "Quality" },
+      "tt25_version": { "name": "Version" },
+      "tt25_aspect_ratio": { "name": "Aspect Ratio" },
+      "tt25_resolution": { "name": "Resolution" },
+      "tt25_quality": { "name": "Quality" },
+      "tt25_background": { "name": "Background" },
+      "banana2_aspect_ratio": { "name": "Aspect Ratio" },
+      "banana2_image_size": { "name": "Image Size" },
+      "banana2_thinking_level": { "name": "Thinking Level" },
+      "banana_pro_aspect_ratio": { "name": "Aspect Ratio" },
+      "banana_pro_image_size": { "name": "Image Size" },
+      "timeout": { "name": "Timeout (seconds)" },
+      "retries": { "name": "Retries" },
+      "ui_language": { "name": "UI Language" },
+      "image_1": { "name": "Reference Image 1" },
+      "image_2": { "name": "Reference Image 2" },
+      "image_3": { "name": "Reference Image 3" },
+      "image_4": { "name": "Reference Image 4" },
+      "image_5": { "name": "Reference Image 5" }
+    },
+    "outputs": {
+      "0": { "name": "Images" },
+      "1": { "name": "Response" },
+      "2": { "name": "Failed URLs" }
+    }
+  }
+}
