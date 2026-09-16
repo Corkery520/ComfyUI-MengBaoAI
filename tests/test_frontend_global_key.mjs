@@ -67,6 +67,19 @@ app.graph._nodes.push(node);
 node.onNodeCreated();
 await node._mengBaoGlobalKeyStatusPromise;
 const controls = node._mengBaoGlobalKeyControls;
+const root = controls.widget.element;
+const margin = controls.widget.options.margin ?? 10;
+const availableHeight = controls.widget.options.getMinHeight() - 2 * margin;
+const padding = String(root.style.padding).split(" ").map(parseFloat);
+const requiredHeight = parseFloat(controls.input.style.height)
+  + parseFloat(controls.saveButton.style.height || controls.saveButton.style.minHeight)
+  + parseFloat(controls.status.style.height)
+  + 2 * parseFloat(root.style.gap) + 2 * padding[0];
+assert.ok(availableHeight >= requiredHeight,
+  `Status text is clipped: ${availableHeight}px available, ${requiredHeight}px required`);
+assert.equal(controls.status.style.flexShrink, "0");
+assert.equal(controls.saveButton.style.whiteSpace, "nowrap");
+assert.equal(controls.saveButton.title, controls.saveButton.textContent);
 assert.equal(node.title, "萌宝全局API Key管理");
 assert.equal(node.widgets[0].hidden, true);
 assert.equal(controls.input.type, "password");

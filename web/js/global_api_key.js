@@ -42,6 +42,8 @@ function renderControls(node, language = currentLanguage()) {
   controls.input.disabled = busy(node);
   controls.saveButton.textContent = state.kind === "saving" ? labels.saving : labels.save;
   controls.clearButton.textContent = state.kind === "clearing" ? labels.clearing : labels.clear;
+  controls.saveButton.title = controls.saveButton.textContent;
+  controls.clearButton.title = controls.clearButton.textContent;
   controls.saveButton.disabled = busy(node) || !controls.input.value.trim();
   controls.clearButton.disabled = busy(node) || state.saved !== true;
   for (const button of [controls.saveButton, controls.clearButton]) {
@@ -110,19 +112,19 @@ async function updateKey(node, action) {
 function ensureControls(node) {
   if (node._mengBaoGlobalKeyControls || typeof document === "undefined" || typeof node.addDOMWidget !== "function") return;
   const root = document.createElement("div");
-  Object.assign(root.style, { display: "flex", flexDirection: "column", gap: "8px", width: "100%", padding: "4px 0", boxSizing: "border-box" });
+  Object.assign(root.style, { display: "flex", flexDirection: "column", gap: "8px", width: "100%", height: "100%", padding: "4px 10px", boxSizing: "border-box" });
   const input = document.createElement("input");
   input.type = "password";
   input.autocomplete = "off";
   input.spellcheck = false;
-  Object.assign(input.style, { width: "100%", height: "30px", padding: "0 12px", boxSizing: "border-box", border: "1px solid #666666", borderRadius: "6px", background: "#222222", color: "#ffffff", fontSize: "13px" });
+  Object.assign(input.style, { flexShrink: "0", width: "100%", height: "30px", padding: "0 12px", boxSizing: "border-box", border: "1px solid #666666", borderRadius: "6px", background: "#222222", color: "#ffffff", fontSize: "13px" });
   input.addEventListener("input", () => renderControls(node));
   const row = document.createElement("div");
-  Object.assign(row.style, { display: "flex", gap: "8px", width: "100%" });
+  Object.assign(row.style, { display: "flex", flexShrink: "0", gap: "8px", width: "100%", height: "32px" });
   function button(action, color) {
     const element = document.createElement("button");
     element.type = "button";
-    Object.assign(element.style, { flex: "1 1 0", minWidth: "0", minHeight: "32px", border: "0", borderRadius: "6px", background: color, color: "#ffffff", fontSize: "13px", overflowWrap: "anywhere" });
+    Object.assign(element.style, { flex: "1 1 0", minWidth: "0", height: "32px", padding: "4px 8px", boxSizing: "border-box", lineHeight: "18px", border: "0", borderRadius: "6px", background: color, color: "#ffffff", fontSize: "13px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" });
     element.addEventListener("click", () => updateKey(node, action));
     return element;
   }
@@ -131,10 +133,11 @@ function ensureControls(node) {
   row.append(saveButton, clearButton);
   const status = document.createElement("div");
   status.setAttribute("role", "status");
-  Object.assign(status.style, { fontSize: "12px", height: "18px", lineHeight: "18px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" });
+  Object.assign(status.style, { flexShrink: "0", fontSize: "12px", height: "20px", lineHeight: "20px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" });
   root.append(input, row, status);
   const widget = node.addDOMWidget("mengbao_global_key_controls", "mengbao-global-key-controls", root, {
-    serialize: false, hideOnZoom: false, getMinHeight: () => 108, getMaxHeight: () => 108,
+    // DOMWidget 默认上下各留 10px，会吞掉状态行；边距统一由根容器管理。
+    serialize: false, hideOnZoom: false, margin: 0, getMinHeight: () => 108, getMaxHeight: () => 108,
   });
   node._mengBaoGlobalKeyControls = { input, saveButton, clearButton, status, widget, render: (language) => renderControls(node, language) };
 }

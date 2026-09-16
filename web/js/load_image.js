@@ -47,6 +47,7 @@ function rememberWidget(widget) {
   widget._wangOriginalType = widget.type || "text";
   widget._wangOriginalComputeSize = widget.computeSize;
   widget._wangOriginalSerialize = widget.serialize;
+  widget._wangOriginalDisplay = (widget.element || widget.inputEl)?.style?.display;
 }
 
 function setWidgetVisible(widget, visible) {
@@ -54,6 +55,12 @@ function setWidgetVisible(widget, visible) {
     return;
   }
   rememberWidget(widget);
+  widget.hidden = !visible;
+  const element = widget.element || widget.inputEl;
+  if (element) {
+    element.hidden = !visible;
+    if (element.style) element.style.display = visible ? widget._wangOriginalDisplay || "" : "none";
+  }
 
   if (visible) {
     widget.type = widget._wangOriginalType;
@@ -109,7 +116,7 @@ async function setNodeImage(node, file, sourceLabel) {
 
   node._wangPreviewUrl = dataUrl;
   node._wangStatus = `${file.name || sourceLabel || "clipboard image"}`;
-  node.setSize?.(node.computeSize());
+  setupNode(node);
   app.graph?.setDirtyCanvas(true, true);
 }
 
@@ -154,21 +161,37 @@ function addPreview(node) {
   }
   node._wangPreviewAdded = true;
 
-  const drawForeground = node.onDrawForeground;
-  node.onDrawForeground = function (ctx) {
-    drawForeground?.apply(this, arguments);
-
-    const y = (this.widgets?.length || 0) * 20 + 42;
-    const width = Math.max(220, this.size?.[0] || 220);
-    ctx.save();
-    ctx.fillStyle = "#2f3542";
-    ctx.fillRect(10, y, width - 20, 26);
-    ctx.fillStyle = "#dfe4ea";
-    ctx.font = "12px sans-serif";
-    const text = this._wangStatus || labels().hint;
-    ctx.fillText(text.slice(0, 42), 18, y + 17);
-    ctx.restore();
-  };
+  // 提示占用独立控件空间，不再按控件数量猜测位置，避免覆盖上传按钮和输出端口。
+  node.addCustomWidget({
+    name: "mengbao_load_status",
+    type: "mengbao-load-status",
+    serialize: false,
+    computeSize: (width) => [width, 44],
+    draw(ctx, owner, width, y) {
+      ctx.save();
+      ctx.fillStyle = "#2f3542";
+      ctx.fillRect(10, y, width - 20, 44);
+      ctx.fillStyle = "#dfe4ea";
+      ctx.font = "12px sans-serif";
+      const lines = [""];
+      for (const character of String(owner._wangStatus || labels().hint)) {
+        const last = lines.length - 1;
+        if (ctx.measureText(lines[last] + character).width <= width - 36) {
+          lines[last] += character;
+        } else if (lines.length < 2) {
+          lines.push(character);
+        } else {
+          while (lines[last] && ctx.measureText(lines[last] + "...").width > width - 36) {
+            lines[last] = lines[last].slice(0, -1);
+          }
+          lines[last] += "...";
+          break;
+        }
+      }
+      lines.forEach((line, index) => ctx.fillText(line, 18, y + 17 + index * 18));
+      ctx.restore();
+    },
+  });
 }
 
 function setupNode(node) {
@@ -203,7 +226,8 @@ function setupNode(node) {
   }
 
   addPreview(node);
-  node.setSize?.(node.computeSize());
+  const size = node.computeSize();
+  node.setSize?.([Math.max(300, node.size?.[0] || 0, size[0]), size[1]]);
 }
 
 document.addEventListener(
