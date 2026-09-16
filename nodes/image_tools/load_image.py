@@ -92,6 +92,7 @@ class WANGLoadImageUploadPaste:
     DESCRIPTION = "通过文件选择或 Ctrl+V 粘贴加载图片，并输出遮罩和尺寸。"
     SEARCH_ALIASES = [
         "MengBao",
+        "WANGLoadImageUploadPaste",
         "WANG Load Image Upload Paste",
         "Load Image",
         "加载图片",

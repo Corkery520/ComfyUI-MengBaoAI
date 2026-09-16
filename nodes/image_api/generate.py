@@ -329,6 +329,7 @@ class MengBaoImageAPI:
     )
     SEARCH_ALIASES = [
         "MengBao",
+        "WANGImageAPI",
         "MengBao Image API",
         "MengBao-Image-API",
         "MengBao AI Image Generation",

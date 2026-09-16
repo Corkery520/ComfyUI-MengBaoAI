@@ -31,7 +31,13 @@ class ImageGridSplit:
     FUNCTION = "split"
     CATEGORY = "萌宝AI/图像处理"
     DESCRIPTION = "将图片按 2x2、3x3、4x4 或自定义网格拆分为图片批次。"
-    SEARCH_ALIASES = ["MengBao", "Image Grid Split", "图片拆分", "九宫格"]
+    SEARCH_ALIASES = [
+        "MengBao",
+        "ImageGridSplit",
+        "Image Grid Split",
+        "图片拆分",
+        "九宫格",
+    ]
 
     def split(self, image, grid, custom_rows, custom_cols, trim_to_even_tiles):
         image = _ensure_image_tensor(image)
@@ -98,7 +104,13 @@ class ImageFreeCrop:
     FUNCTION = "crop"
     CATEGORY = "萌宝AI/图像处理"
     DESCRIPTION = "按像素坐标和尺寸自由裁剪图片。"
-    SEARCH_ALIASES = ["MengBao", "Image Free Crop", "自由裁剪", "图片裁剪"]
+    SEARCH_ALIASES = [
+        "MengBao",
+        "ImageFreeCrop",
+        "Image Free Crop",
+        "自由裁剪",
+        "图片裁剪",
+    ]
 
     def crop(self, image, x, y, width, height):
         image = _ensure_image_tensor(image)
@@ -132,7 +144,12 @@ class ImageGridTilePicker:
     FUNCTION = "pick"
     CATEGORY = "萌宝AI/图像处理"
     DESCRIPTION = "从网格中选择指定行列的单张图片。"
-    SEARCH_ALIASES = ["MengBao", "Image Grid Tile Picker", "网格选图"]
+    SEARCH_ALIASES = [
+        "MengBao",
+        "ImageGridTilePicker",
+        "Image Grid Tile Picker",
+        "网格选图",
+    ]
 
     def pick(self, image, grid, custom_rows, custom_cols, row, column):
         image = _ensure_image_tensor(image)

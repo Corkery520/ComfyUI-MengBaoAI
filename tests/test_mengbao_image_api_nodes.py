@@ -392,10 +392,15 @@ class MengBaoImageAPITests(unittest.TestCase):
         self.assertEqual(inputs["timeout"][1]["default"], 600)
 
     def test_node_search_aliases_include_current_brand_name(self):
-        aliases = node_module.MengBaoImageAPI.SEARCH_ALIASES
-        self.assertIn("MengBao", aliases)
-        self.assertIn("MengBao-Image-API", aliases)
-        self.assertIn("萌宝图像 API", aliases)
+        for node_id, node_class in node_pack.NODE_CLASS_MAPPINGS.items():
+            with self.subTest(node_id=node_id):
+                aliases = node_class.SEARCH_ALIASES
+                self.assertIn("MengBao", aliases)
+                self.assertIn(node_id, aliases)
+
+        image_aliases = node_module.MengBaoImageAPI.SEARCH_ALIASES
+        self.assertIn("MengBao-Image-API", image_aliases)
+        self.assertIn("萌宝图像 API", image_aliases)
 
     def test_saved_api_key_uses_local_env_without_exposing_it(self):
         with tempfile.TemporaryDirectory() as temporary_directory:

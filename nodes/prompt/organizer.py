@@ -52,6 +52,7 @@ class WANGPromptOrganizer:
     DESCRIPTION = "保存、分组、搜索、导入和导出提示词。"
     SEARCH_ALIASES = [
         "MengBao",
+        "WANGPromptOrganizer",
         "WANG Prompt Organizer",
         "Prompt Organizer",
         "提示词整理器",
@@ -230,6 +231,7 @@ class WANGPromptReader:
     DESCRIPTION = "按分组和标题读取已保存的提示词。"
     SEARCH_ALIASES = [
         "MengBao",
+        "WANGPromptReader",
         "WANG Prompt Reader",
         "Prompt Reader",
         "提示词读取",
