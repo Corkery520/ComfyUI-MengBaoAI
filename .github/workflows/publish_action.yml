@@ -19,6 +19,8 @@ jobs:
   publish-node:
     name: Validate and publish custom node
     runs-on: ubuntu-latest
+    env:
+      REGISTRY_ACCESS_TOKEN: ${{ secrets.REGISTRY_ACCESS_TOKEN }}
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -46,21 +48,32 @@ jobs:
           project = metadata["project"]
           comfy = metadata["tool"]["comfy"]
 
-          assert project["name"] == "mengbao-image-api"
+          assert project["name"] == "mengbaoai"
+          assert project["version"] == "1.0.0"
           assert re.fullmatch(r"\d+\.\d+\.\d+", project["version"])
           assert "萌宝AI" in project["description"]
-          assert project["urls"]["Repository"] == "https://github.com/Corkery520/ComfyUI-MengBao-Image-API"
+          assert project["urls"]["Repository"] == "https://github.com/Corkery520/ComfyUI-MengBaoAI"
           assert comfy["PublisherId"] == "corkery520"
-          assert comfy["DisplayName"] == "萌宝AI"
+          assert comfy["DisplayName"] == "萌宝AI ComfyUI 综合节点包"
           assert "dependencies" in project["dynamic"]
 
           required_paths = [
               "__init__.py",
-              "MengBao_image_api_nodes.py",
               "requirements.txt",
               "README.md",
               "LICENSE",
-              "web/MengBao_image_api_nodes_v4.js",
+              "nodes/image_api/generate.py",
+              "nodes/image_tools/split_crop.py",
+              "nodes/image_tools/load_image.py",
+              "nodes/prompt/organizer.py",
+              "api/auth.py",
+              "api/image_client.py",
+              "api/prompt_routes.py",
+              "utils/image.py",
+              "utils/prompt_store.py",
+              "web/js/image_api.js",
+              "web/js/load_image.js",
+              "web/js/prompt_organizer.js",
               "locales/en/nodeDefs.json",
               "locales/zh/nodeDefs.json",
           ]
@@ -72,9 +85,19 @@ jobs:
       - name: Run basic checks
         shell: bash
         run: |
-          python -m py_compile __init__.py MengBao_image_api_nodes.py tests/test_mengbao_image_api_nodes.py
-          node --check web/MengBao_image_api_nodes_v4.js
-          node tests/test_frontend_localization.mjs
+          python -m unittest discover -s tests -v
+          python -m compileall -q .
+          for file in web/js/*.js; do node --check "$file"; done
+          node --test tests/*.mjs
+          python - <<'PY'
+          import json
+          import pathlib
+          import tomllib
+
+          tomllib.loads(pathlib.Path("pyproject.toml").read_text(encoding="utf-8"))
+          for path in pathlib.Path("locales").glob("*/nodeDefs.json"):
+              json.loads(path.read_text(encoding="utf-8"))
+          PY
 
       - name: Check Registry security rules
         shell: bash
@@ -89,6 +112,11 @@ jobs:
           fi
 
       - name: Publish custom node
+        if: ${{ env.REGISTRY_ACCESS_TOKEN != '' }}
         uses: Comfy-Org/publish-node-action@main
         with:
           personal_access_token: ${{ secrets.REGISTRY_ACCESS_TOKEN }}
+
+      - name: Skip publish without Registry token
+        if: ${{ env.REGISTRY_ACCESS_TOKEN == '' }}
+        run: echo "REGISTRY_ACCESS_TOKEN is not configured; validation completed without publishing."

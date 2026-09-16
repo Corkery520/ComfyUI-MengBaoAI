@@ -2,22 +2,26 @@
 
 All notable changes to this project are documented in this file.
 
-## [1.1.0] - 2026-09-16
-
-### Changed
-
-- Upgraded the repository to a unified MengBao AI node pack architecture.
-- Added centralized node registration under `nodes/` with duplicate ID checks.
-- Moved the existing node to the `萌宝AI/图像生成` category and unified its display name.
-- Preserved the historical `WANGImageAPI` ID for existing workflow compatibility.
-- Added `docs/NODE_DEVELOPMENT.md` for future nodes and category conventions.
-
 ## [1.0.0] - 2026-09-16
 
 ### Added
 
-- Initial ComfyUI Registry release under the package ID `mengbao-image-api`.
-- Text-to-image, image-to-image, and multi-image reference workflows.
-- GPT Image 2/2.5 and Nano Banana 2/Pro model mappings.
-- Transparent background controls, balance query controls, and localized Chinese/English UI.
-- ComfyUI Registry metadata and automated GitHub Actions publishing.
+- Established `ComfyUI-MengBaoAI` as the unified MengBaoAI ComfyUI node pack.
+- Integrated Image API, image split/crop, image loading, prompt organizer, and prompt reader nodes.
+- Added centralized node registration with duplicate ID, display name, and category validation.
+- Added Chinese and English node localization with live `Comfy.Locale` updates.
+- Added file selection and `Ctrl+V` support for image loading, preview images, and prompt JSON imports.
+- Added user-directory storage and one-time migration for saved API keys and prompt data.
+- Added Python and JavaScript regression tests for all seven nodes.
+
+### Changed
+
+- Changed the immutable Comfy Registry package ID to `mengbaoai` for the new unified package.
+- Moved runtime code into `nodes/`, `api/`, `utils/`, and `web/js/` modules.
+- Standardized categories under `萌宝AI/图像API`, `萌宝AI/图像处理`, and `萌宝AI/提示词`.
+
+### Compatibility
+
+- Preserved all seven historical ComfyUI node IDs.
+- Preserved `/wang_prompt_organizer/*` HTTP routes for existing frontend integrations.
+- Kept the old `mengbao-image-api` Registry package as a separate Legacy upgrade path.

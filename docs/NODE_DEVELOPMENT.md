@@ -1,35 +1,48 @@
 # 萌宝AI 节点开发规范
 
-本仓库是一个统一的 ComfyUI Node Pack。所有萌宝AI节点必须在当前仓库中开发和注册，不得为单个节点创建新的 `custom_nodes` 插件目录。
+本仓库是唯一的萌宝AI ComfyUI Node Pack。所有新节点均在当前仓库开发和注册，不为单个功能新建独立 `custom_nodes` 插件。
 
-## 内部 ID
+## 稳定接口
 
-- 已发布节点的内部 ID 不得修改。`WANGImageAPI` 是历史兼容 ID，必须保留。
-- 新节点统一使用稳定、唯一的英文 ID：`MengBao_xxx`。
-- 显示名称与内部 ID 分离，中文显示名称统一使用 `萌宝AI·功能名称`。
+- 已发布节点的内部 ID 不得修改。
+- 历史 ID 即使包含 `WANG` 前缀也必须保留，以兼容已有工作流。
+- 新节点使用稳定且唯一的英文 ID，建议格式为 `MengBao功能名称`。
+- 显示名称与内部 ID 分离：中文为 `萌宝AI·功能名称`，英文为 `MengBao AI · Feature`。
+- 已发布输入名、输出顺序与序列化字段不得直接更改；需要演进时提供兼容迁移。
+
+## 目录职责
+
+- `nodes/`：ComfyUI 节点类及模块级 mappings。
+- `api/`：鉴权、外部 API 客户端和 HTTP 路由。
+- `utils/`：可复用的纯工具和用户数据存储。
+- `web/js/`：节点交互、上传、动态控件与本地化。
+- `locales/`：中英文节点定义。
+- `tests/`：后端、前端、迁移和兼容性测试。
+
+只有两个以上节点确实复用的逻辑才放入 `api/` 或 `utils/`。不要创建没有实现的占位模块。
 
 ## 分类
 
-一级分类固定为 `萌宝AI`，允许的标准子分类如下：
+一级分类固定为 `萌宝AI`，允许的分类由 `nodes/__init__.py` 集中校验：
 
 - `萌宝AI/基础`
-- `萌宝AI/提示词`
-- `萌宝AI/图像生成`
+- `萌宝AI/图像API`
 - `萌宝AI/图像处理`
+- `萌宝AI/提示词`
 - `萌宝AI/电商`
 - `萌宝AI/视频`
 - `萌宝AI/工具`
 
-## 新增节点
+## 新增节点流程
 
-1. 根据真实用途在 `nodes/` 下选择或新建子目录，例如 `nodes/image/`、`nodes/prompt/`。
-2. 新建节点类，并设置 `INPUT_TYPES`、`RETURN_TYPES`、`FUNCTION` 和标准 `CATEGORY`。
-3. 在所属子模块维护 `NODE_CLASS_MAPPINGS` 与 `NODE_DISPLAY_NAME_MAPPINGS`。
-4. 在 `nodes/__init__.py` 汇总该子模块的 mappings。
-5. 输入输出需要多语言时，同步修改 `locales/en/nodeDefs.json`、`locales/zh/nodeDefs.json` 和前端本地化脚本。
-6. 新增依赖时更新 `requirements.txt`；只有多个节点真正复用时才抽离到 `api/` 或 `utils/`。
-7. 运行测试与编译检查，然后重启 ComfyUI。
-8. 在 `/object_info/{内部ID}` 验证内部 ID、显示名、分类和 `python_module`。
+1. 在 `nodes/` 中选择真实业务模块并实现节点类。
+2. 设置 `INPUT_TYPES`、`RETURN_TYPES`、`RETURN_NAMES`、`FUNCTION`、`CATEGORY` 和 `DESCRIPTION`。
+3. 在所属模块维护 `NODE_CLASS_MAPPINGS` 与 `NODE_DISPLAY_NAME_MAPPINGS`。
+4. 在 `nodes/__init__.py` 聚合新模块。
+5. 同步补齐 `locales/en/nodeDefs.json`、`locales/zh/nodeDefs.json` 和前端动态本地化。
+6. 上传入口必须同时支持文件选择与 `Ctrl+V`；多目标按悬停或焦点路由，文本输入保持原生粘贴。
+7. 新增依赖前先确认现有依赖或标准库不能解决，并更新 `requirements.txt`。
+8. 先补测试，再实现功能，最后运行完整检查并重启 ComfyUI 冒烟验证。
 
 ## 标准模板
 
@@ -47,27 +60,39 @@ class MengBaoExample:
     RETURN_NAMES = ("text",)
     FUNCTION = "run"
     CATEGORY = "萌宝AI/工具"
+    DESCRIPTION = "处理输入文本。"
 
     def run(self, text):
         return (text,)
 
 
-NODE_CLASS_MAPPINGS = {
-    "MengBao_Example": MengBaoExample,
-}
-
-NODE_DISPLAY_NAME_MAPPINGS = {
-    "MengBao_Example": "萌宝AI·示例工具",
-}
+NODE_CLASS_MAPPINGS = {"MengBaoExample": MengBaoExample}
+NODE_DISPLAY_NAME_MAPPINGS = {"MengBaoExample": "萌宝AI·示例工具"}
 ```
+
+## 用户数据与安全
+
+- API Key 和提示词数据保存到 `ComfyUI/user/mengbaoai/`。
+- 仓库中只保留空白默认模板，不提交用户数据。
+- `.env`、API Key、Token、日志、缓存和构建产物不得提交。
+- API 地址、模型映射和环境变量名集中管理，不在多个节点重复写死。
+- 外部请求必须设置超时并返回清晰的原始英文错误。
 
 ## 提交前检查
 
 ```bash
-python -m unittest discover -s tests -p "test_*.py"
+python -m unittest discover -s tests -v
 python -m compileall -q .
-node --check web/MengBao_image_api_nodes_v4.js
-node tests/test_frontend_localization.mjs
+node --test tests/*.mjs
+node --check web/js/image_api.js
+node --check web/js/load_image.js
+node --check web/js/node_localization.js
+node --check web/js/prompt_organizer.js
 ```
 
-确认新内部 ID 不重复、两个 mappings 键完全对应、所有节点的一级 `CATEGORY` 都是 `萌宝AI`，并且没有提交 `.env`、API Key 或本机缓存。
+最后检查：
+
+- `NODE_CLASS_MAPPINGS` 与 `NODE_DISPLAY_NAME_MAPPINGS` 键完全一致。
+- 内部 ID 不重复，分类合法，中英文 locale 覆盖完整。
+- `/object_info/{内部ID}` 中的 `python_module` 来自 `custom_nodes.ComfyUI-MengBaoAI`。
+- `git status` 不包含 `.env`、API Key、用户提示词或无关文件。

@@ -1,197 +1,132 @@
-# 萌宝AI ComfyUI Nodes
+# ComfyUI-MengBaoAI
 
-萌宝AI ComfyUI 节点包。当前提供图片生成与编辑节点，后续的提示词、图像处理、电商、视频和工具节点都会在同一个插件仓库中持续扩展。
+萌宝AI ComfyUI 综合节点包。一站式集成图像生成、图片拆分与裁剪、图片加载、提示词管理，并为后续电商、视频和多模态节点提供统一扩展结构。
 
-Registry 包 ID：`mengbao-image-api`，当前版本：`1.1.0`。插件来源统一为 `custom_nodes.ComfyUI-MengBao-Image-API`。
+- GitHub：<https://github.com/Corkery520/ComfyUI-MengBaoAI>
+- Comfy Registry ID：`mengbaoai`
+- 当前版本：`1.0.0`
+- 节点分类：`萌宝AI/*`
 
-## 功能特性
+## 已包含节点
 
-- 支持文生图、图生图和多参考图生成。
-- 新节点默认显示 3 个 `IMAGE` 输入口，可通过并排的“添加参考图”和“删除参考图”按钮调整；最少保留 3 个，按模型最多使用 14 或 16 张参考图。
-- 支持 4 个前端模型选项，并自动映射到对应 API 模型。
-- 支持尺寸、比例、分辨率、质量、背景、思考等级等模型专属参数。
-- `gpt-image-2.5` 支持 `opaque`、`transparent`、`auto` 背景参数。
-- GPT 模型选择透明背景时会追加透明 PNG 提示词；`gpt-image-2` 上游不原生支持背景参数，透明效果不保证一定生成真实 Alpha 通道。
-- 支持中文和英文界面，并跟随 ComfyUI 的 `Comfy.Locale` 设置切换。
-- 提供原始响应文本、失败 URL 和错误说明图，便于排查 API 问题。
-- 根据任务状态接口返回的 `progress` 更新 ComfyUI 顶部生成进度。
-- 提供余额显示及“注册 API / 保存 API / 刷新余额 / 问题反馈”按钮；保存、加载节点和每次执行完成后会自动刷新余额。
-
-## 节点列表
-
-| 节点 ID | 显示名称 | 作用 |
+| 内部 ID | 中文显示名 | 功能 |
 | --- | --- | --- |
-| `WANGImageAPI` | 中文：`萌宝AI·图像生成` / 英文：`MengBao AI · Image Generation` | 调用 TT Image 与 Nano Banana 系列模型生成或编辑图片 |
+| `WANGImageAPI` | 萌宝AI·图像生成 | 文生图、图生图、多参考图生成、余额与 API Key 管理 |
+| `ImageGridSplit` | 萌宝AI·图片拆分 | 2x2、3x3、4x4 及自定义网格拆分 |
+| `ImageFreeCrop` | 萌宝AI·自由裁剪 | 按像素坐标和尺寸裁剪 |
+| `ImageGridTilePicker` | 萌宝AI·网格选图 | 从网格中选择指定行列 |
+| `WANGLoadImageUploadPaste` | 萌宝AI·加载图片 | 文件选择或 `Ctrl+V` 粘贴图片 |
+| `WANGPromptOrganizer` | 萌宝AI·提示词整理器 | 保存、分组、搜索、导入和导出提示词 |
+| `WANGPromptReader` | 萌宝AI·提示词读取 | 在工作流中读取已保存提示词 |
 
-`WANGImageAPI` 是已经投入使用的历史内部 ID，为保证旧工作流兼容不会改名。新节点内部 ID 统一使用 `MengBao_xxx`。
+这些内部 ID 为兼容旧工作流而保留。中英文显示名会跟随 ComfyUI 的 `Comfy.Locale` 实时切换。
 
-## 节点包分类
+## 图像模型
 
-所有节点统一放在一级分类 `萌宝AI` 下，并按真实用途使用以下子分类：
+前端模型与实际请求模型映射如下：
 
-- `萌宝AI/基础`
-- `萌宝AI/提示词`
-- `萌宝AI/图像生成`
-- `萌宝AI/图像处理`
-- `萌宝AI/电商`
-- `萌宝AI/视频`
-- `萌宝AI/工具`
-
-当前节点分类为 `萌宝AI/图像生成`。后续新增节点请遵循 [节点开发规范](docs/NODE_DEVELOPMENT.md)，在 `nodes/` 对应子模块中注册，不要创建新的平级插件目录。
-
-## 模型映射
-
-| 前端显示 | API 实际模型 | 参考图上限 |
+| 前端模型 | API 模型 | 最大参考图 |
 | --- | --- | ---: |
 | `gpt-image-2` | `tt-image-2` | 14 |
 | `gpt-image-2.5` | `tt-image-2.5` | 16 |
 | `nano-banana-2` | `banana-2` | 14 |
 | `nano-banana-2-pro` | `banana-pro` | 14 |
 
-API 基础地址固定为 `https://api.lk888.ai`。创建任务使用 `POST /v1/media/generate`，状态查询使用 `GET /v1/media/status?task_id=...`。
+图像 API 使用固定服务地址 `https://api.lk888.ai`。默认模型为 `gpt-image-2`，比例与分辨率默认为自动，超时时间为 600 秒。节点支持任务进度、动态参考图、透明 PNG 提示词、余额自动刷新及 API Key 本地保存。
 
 ## 安装
 
-### 方法一：ComfyUI Manager（推荐）
-
-1. 打开 ComfyUI Manager。
-2. 进入自定义节点安装界面，搜索 `萌宝AI`。
-3. 选择 `萌宝AI` 并点击安装。
-4. 安装完成后完全重启 ComfyUI，并强制刷新浏览器页面。
-
-也可以使用 Comfy CLI：
+### ComfyUI Registry
 
 ```bash
-comfy node install mengbao-image-api
+comfy node install mengbaoai
 ```
 
-### 方法二：Git 安装
+### Git 安装
 
-进入 ComfyUI 的 `custom_nodes` 目录：
+在 ComfyUI 的 `custom_nodes` 目录执行：
 
 ```bash
-cd ComfyUI/custom_nodes
-git clone https://github.com/Corkery520/ComfyUI-MengBao-Image-API.git
-cd ComfyUI-MengBao-Image-API
-pip install -r requirements.txt
+git clone https://github.com/Corkery520/ComfyUI-MengBaoAI.git
+cd ComfyUI-MengBaoAI
+python -m pip install -r requirements.txt
 ```
 
-完全退出并重新启动 ComfyUI，然后在浏览器中执行强制刷新。
+重启 ComfyUI 后，可搜索“萌宝AI”“MengBao”或历史内部名称。
 
-### 方法三：ZIP 手动安装
+## 从旧插件迁移
 
-下载本仓库 ZIP 并解压到：
+安装总包前，请停用以下旧独立插件，避免重复节点 ID 或重复 HTTP 路由：
 
 ```text
-ComfyUI/custom_nodes/ComfyUI-MengBao-Image-API
+ComfyUI-MengBao-Image-API
+WANG_image_split_crop_nodes
+WANG_load_image_nodes
+WANG_prompt_organizer_nodes
 ```
 
-在该目录执行 `pip install -r requirements.txt`，随后重启 ComfyUI。
+首次加载时会尝试迁移旧数据。用户数据不写入 Git 仓库：
 
-## 更新
-
-通过 Manager 安装的用户可直接在 Manager 中检查并安装更新。
-
-Git 安装用户可以执行：
-
-```bash
-cd ComfyUI/custom_nodes/ComfyUI-MengBao-Image-API
-git pull
-pip install -r requirements.txt
+```text
+ComfyUI/user/mengbaoai/.env
+ComfyUI/user/mengbaoai/prompts.json
 ```
 
-更新后请重启 ComfyUI 并强制刷新浏览器缓存。
+- API Key 从旧 Image API 安装目录的 `.env` 迁移。
+- 提示词从旧 Prompt Organizer 的 `data/prompts.json` 迁移。
+- 已存在的新数据不会被旧文件覆盖。
+- 历史提示词接口 `/wang_prompt_organizer/*` 保持兼容。
 
-## Registry 版本发布
+## 上传与粘贴
 
-- Registry 版本遵循语义化版本号，首个公开版本为 `1.0.0`。
-- 已发布版本不可覆盖；任何新版本都必须先更新 `pyproject.toml` 中的版本号。
-- Registry 发布密钥仅保存在 GitHub Actions Secret `REGISTRY_ACCESS_TOKEN` 中，不得写入源码、工作流或文档。
-- 版本记录见 [CHANGELOG.md](CHANGELOG.md)。
-
-## API Key 配置
-
-可以直接在节点的 `API Key` 输入框中填写密钥，也可以把连接 JSON 粘贴到 `Connection JSON`：
-
-```json
-{"key":"your_api_key_here"}
-```
-
-界面只显示一个“API 密钥 / 连接 JSON”输入框，既可填写原始 API Key，也可粘贴包含 `key` 字段的连接 JSON。旧工作流中的 `connection_json` 字段已在界面隐藏，并仅在可见输入框为空时作为兼容回退。请勿把真实 API Key 写入源码、README、工作流示例或提交到 GitHub。
-
-点击节点底部的“保存 API”会把当前密钥写入插件目录下被 Git 忽略的本机 `.env` 文件。后续工作流可以复用该密钥；接口只会向前端返回“是否已保存”，不会返回密钥内容。
-
-API Key 可在以下页面创建：
-
-https://corkery.ai/api/console/keys
-
-## 基础使用流程
-
-1. 安装插件并重启 ComfyUI。
-2. 在节点菜单的 `萌宝AI/图像生成` 分类中添加节点。
-3. 在“API 密钥 / 连接 JSON”中填写原始 API Key 或连接 JSON。
-4. 选择模型并设置该模型对应的参数。
-5. 输入提示词；图生图或多图参考时连接一个或多个参考图。
-6. 连接 `Images` 输出到预览或保存图像节点，然后执行工作流。
-
-## 输出
-
-- `Images`：生成结果图片批次；没有收到图片时返回错误说明图。
-- `Response`：API 创建任务、状态或错误的原始 JSON 文本。
-- `Failed URLs`：下载失败的结果图片 URL。
-
-## 超时与重试
-
-- `timeout`：整个任务允许等待的最长秒数，默认 600 秒。
-- `retries`：状态查询和结果图片下载的重试次数。
-- 创建任务不会自动重试，避免服务端已经接收任务后重复提交和计费。
-
-如果任务超时，`Response` 会尽量保留 `task_id`。建议先使用该 ID 查询原任务，不要立即重复生成。
+- 加载图片节点支持文件选择和 `Ctrl+V` 粘贴。
+- 提示词面板的预览图与 JSON 导入同时支持文件选择和 `Ctrl+V`。
+- 存在多个上传目标时，仅悬停或聚焦的区域接收粘贴。
+- 文本输入框继续使用系统原生文本粘贴，不会被文件上传逻辑拦截。
 
 ## 项目结构
 
 ```text
-ComfyUI-MengBao-Image-API/
+ComfyUI-MengBaoAI/
 ├── __init__.py
-├── MengBao_image_api_nodes.py
-├── web/
-│   └── MengBao_image_api_nodes_v4.js
-├── locales/
-│   ├── en/nodeDefs.json
-│   └── zh/nodeDefs.json
-├── tests/
-├── .github/workflows/publish_action.yml
-├── pyproject.toml
-├── .comfyignore
-├── requirements.txt
-├── CHANGELOG.md
-├── LICENSE
-├── .gitignore
-└── README.md
+├── nodes/
+│   ├── image_api/generate.py
+│   ├── image_tools/split_crop.py
+│   ├── image_tools/load_image.py
+│   └── prompt/organizer.py
+├── api/
+│   ├── auth.py
+│   ├── image_client.py
+│   └── prompt_routes.py
+├── utils/
+│   ├── image.py
+│   └── prompt_store.py
+├── web/js/
+├── locales/en/nodeDefs.json
+├── locales/zh/nodeDefs.json
+└── tests/
 ```
 
-## 常见问题
+## 开发与测试
 
-### 安装后找不到节点
+开发约定见 [`docs/NODE_DEVELOPMENT.md`](docs/NODE_DEVELOPMENT.md)。提交前运行：
 
-确认插件目录位于 `ComfyUI/custom_nodes/`，检查 ComfyUI 启动终端是否有 Python 导入错误，然后完全重启 ComfyUI 并强制刷新浏览器。
+```bash
+python -m unittest discover -s tests -v
+python -m compileall -q .
+node --test tests/*.mjs
+node --check web/js/image_api.js
+node --check web/js/load_image.js
+node --check web/js/node_localization.js
+node --check web/js/prompt_organizer.js
+```
 
-### 依赖安装失败
+## 安全说明
 
-请使用 ComfyUI 实际运行的 Python 环境执行 `pip install -r requirements.txt`。便携版 ComfyUI 通常需要使用其自带的 Python 解释器。
-
-### API 请求失败
-
-检查 API Key、网络连接和账户状态，并查看节点的 `Response` 输出。HTTP 状态码和 API 原始英文错误会保留，便于搜索和反馈。
-
-### ComfyUI 更新后节点异常
-
-先执行 `git pull` 更新插件并重启 ComfyUI。如果问题仍然存在，请保留启动日志、节点 `Response` 输出和复现步骤。
+- 不要提交 `.env`、API Key、Token 或用户提示词数据。
+- API Key 仅保存在 ComfyUI 用户目录。
+- 创建异步图片任务时不会自动重试 POST 请求，以避免重复创建任务和重复扣费。
 
 ## License
 
-本项目使用 [MIT License](LICENSE)。
-
-## Disclaimer
-
-本项目是 ComfyUI 第三方自定义节点扩展，与 ComfyUI 官方项目无隶属关系。ComfyUI 及相关商标归其原作者或权利人所有。用户应自行确保 API 使用行为符合对应服务条款及当地法律法规，并自行承担生成内容与 API 费用相关责任。
+[MIT](LICENSE)

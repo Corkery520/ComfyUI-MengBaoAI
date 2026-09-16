@@ -1,12 +1,19 @@
 [project]
-name = "mengbao-image-api"
-version = "1.1.0"
-description = "MengBao AI custom nodes for ComfyUI."
+name = "mengbaoai"
+version = "1.0.0"
+description = "萌宝AI ComfyUI 综合节点包，集成图像生成、提示词管理与图像处理能力。"
 readme = "README.md"
 license = { file = "LICENSE" }
 requires-python = ">=3.9"
 dynamic = ["dependencies"]
-keywords = ["ComfyUI", "萌宝AI", "MengBao", "image-generation", "image-editing"]
+keywords = [
+    "ComfyUI",
+    "萌宝AI",
+    "MengBaoAI",
+    "image-generation",
+    "image-processing",
+    "prompt-management",
+]
 classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
@@ -18,10 +25,10 @@ classifiers = [
 dependencies = { file = ["requirements.txt"] }
 
 [project.urls]
-Repository = "https://github.com/Corkery520/ComfyUI-MengBao-Image-API"
-Documentation = "https://github.com/Corkery520/ComfyUI-MengBao-Image-API#readme"
-"Bug Tracker" = "https://github.com/Corkery520/ComfyUI-MengBao-Image-API/issues"
+Repository = "https://github.com/Corkery520/ComfyUI-MengBaoAI"
+Documentation = "https://github.com/Corkery520/ComfyUI-MengBaoAI#readme"
+"Bug Tracker" = "https://github.com/Corkery520/ComfyUI-MengBaoAI/issues"
 
 [tool.comfy]
 PublisherId = "corkery520"
-DisplayName = "萌宝AI Nodes"
+DisplayName = "萌宝AI ComfyUI 综合节点包"
