@@ -1,6 +1,8 @@
 # MengBao Image API for ComfyUI
 
-ComfyUI custom nodes for MengBao Image API. 这是一个用于在 ComfyUI 工作流中调用萌宝图像 API 的第三方自定义节点插件。
+ComfyUI custom nodes for MengBao Image API. 这是一个用于在 ComfyUI 工作流中调用萌宝图像 API 的第三方自定义节点插件，在 ComfyUI Manager 中显示为“萌宝AI”。
+
+Registry 包 ID：`mengbao-image-api`，当前版本：`1.0.0`。
 
 ## 功能特性
 
@@ -35,7 +37,20 @@ API 基础地址固定为 `https://api.lk888.ai`。创建任务使用 `POST /v1/
 
 ## 安装
 
-### 方法一：Git 安装
+### 方法一：ComfyUI Manager（推荐）
+
+1. 打开 ComfyUI Manager。
+2. 进入自定义节点安装界面，搜索 `萌宝AI`。
+3. 选择 `萌宝AI` 并点击安装。
+4. 安装完成后完全重启 ComfyUI，并强制刷新浏览器页面。
+
+也可以使用 Comfy CLI：
+
+```bash
+comfy node install mengbao-image-api
+```
+
+### 方法二：Git 安装
 
 进入 ComfyUI 的 `custom_nodes` 目录：
 
@@ -48,7 +63,7 @@ pip install -r requirements.txt
 
 完全退出并重新启动 ComfyUI，然后在浏览器中执行强制刷新。
 
-### 方法二：手动安装
+### 方法三：ZIP 手动安装
 
 下载本仓库 ZIP 并解压到：
 
@@ -60,6 +75,10 @@ ComfyUI/custom_nodes/ComfyUI-MengBao-Image-API
 
 ## 更新
 
+通过 Manager 安装的用户可直接在 Manager 中检查并安装更新。
+
+Git 安装用户可以执行：
+
 ```bash
 cd ComfyUI/custom_nodes/ComfyUI-MengBao-Image-API
 git pull
@@ -67,6 +86,13 @@ pip install -r requirements.txt
 ```
 
 更新后请重启 ComfyUI 并强制刷新浏览器缓存。
+
+## Registry 版本发布
+
+- Registry 版本遵循语义化版本号，首个公开版本为 `1.0.0`。
+- 已发布版本不可覆盖；任何新版本都必须先更新 `pyproject.toml` 中的版本号。
+- Registry 发布密钥仅保存在 GitHub Actions Secret `REGISTRY_ACCESS_TOKEN` 中，不得写入源码、工作流或文档。
+- 版本记录见 [CHANGELOG.md](CHANGELOG.md)。
 
 ## API Key 配置
 
@@ -117,7 +143,11 @@ ComfyUI-MengBao-Image-API/
 │   ├── en/nodeDefs.json
 │   └── zh/nodeDefs.json
 ├── tests/
+├── .github/workflows/publish_action.yml
+├── pyproject.toml
+├── .comfyignore
 ├── requirements.txt
+├── CHANGELOG.md
 ├── LICENSE
 ├── .gitignore
 └── README.md

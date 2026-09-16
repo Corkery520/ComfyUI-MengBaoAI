@@ -1,4 +1,5 @@
 import base64
+import importlib.util
 import io
 import json
 import unittest
@@ -7,7 +8,13 @@ from unittest.mock import patch
 
 from PIL import Image
 
-from WANG_image_api_nodes import MengBao_image_api_nodes as node_module
+
+MODULE_PATH = Path(__file__).resolve().parents[1] / "MengBao_image_api_nodes.py"
+MODULE_SPEC = importlib.util.spec_from_file_location("mengbao_image_api_nodes", MODULE_PATH)
+if MODULE_SPEC is None or MODULE_SPEC.loader is None:
+    raise ImportError(f"Cannot load MengBao image API module from {MODULE_PATH}")
+node_module = importlib.util.module_from_spec(MODULE_SPEC)
+MODULE_SPEC.loader.exec_module(node_module)
 
 
 class FakeResponse:

@@ -1,0 +1,12 @@
+# Development and repository-only files
+.github/
+tests/
+.gitignore
+
+# Local caches and generated artifacts
+__pycache__/
+*.py[cod]
+.pytest_cache/
+build/
+dist/
+*.egg-info/
