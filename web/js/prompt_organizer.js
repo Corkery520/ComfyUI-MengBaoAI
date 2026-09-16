@@ -5,7 +5,7 @@ const COLORS = ["#e25545", "#d33b6a", "#8f3db4", "#6647b8", "#4d5fbc", "#5596e6"
 
 const T = {
   fab: "\u8bcd",
-  manager: "WANG \u63d0\u793a\u8bcd\u6574\u7406\u5668",
+  manager: "\u840c\u5b9dAI\u00b7\u63d0\u793a\u8bcd\u6574\u7406\u5668",
   refresh: "\u5237\u65b0",
   add: "\u6dfb\u52a0",
   editMode: "\u7f16\u8f91\u6a21\u5f0f",

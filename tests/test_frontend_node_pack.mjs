@@ -82,5 +82,7 @@ assert.match(promptSource, /files\.find\(isJsonFile\)/);
 assert.match(promptSource, /isEditableTarget\(event\.target\)/);
 assert.match(promptSource, /Comfy\.Locale/);
 assert.match(promptSource, /Ctrl\+V/);
+assert.match(promptSource, /\\u840c\\u5b9dAI\\u00b7/);
+assert.doesNotMatch(promptSource, /manager:\s*["']WANG/);
 
 console.log("Frontend node pack tests passed.");
