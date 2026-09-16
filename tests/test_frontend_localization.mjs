@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
-const sourceUrl = new URL("../web/MengBao_image_api_nodes_v4.js", import.meta.url);
+const sourceUrl = new URL("../web/js/image_api.js", import.meta.url);
 const source = readFileSync(fileURLToPath(sourceUrl), "utf8");
 const testableSource = source.replace(
   'import { app } from "../../../scripts/app.js";',

@@ -18,6 +18,8 @@ venv/
 env/
 .env
 .env.*
+.mengbaoai/
+data/prompts.json
 *.key
 *.pem
 

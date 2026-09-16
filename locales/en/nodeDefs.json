@@ -48,5 +48,109 @@
       "1": { "name": "Response" },
       "2": { "name": "Failed URLs" }
     }
+  },
+  "ImageGridSplit": {
+    "display_name": "MengBao AI · Image Split",
+    "description": "Split images into 2x2, 3x3, 4x4, or custom grids.",
+    "inputs": {
+      "image": { "name": "Image" },
+      "grid": { "name": "Grid" },
+      "custom_rows": { "name": "Custom Rows" },
+      "custom_cols": { "name": "Custom Columns" },
+      "trim_to_even_tiles": { "name": "Trim to Even Tiles" }
+    },
+    "outputs": {
+      "0": { "name": "Tiles" },
+      "1": { "name": "Rows" },
+      "2": { "name": "Columns" },
+      "3": { "name": "Tile Count" }
+    }
+  },
+  "ImageFreeCrop": {
+    "display_name": "MengBao AI · Free Crop",
+    "description": "Crop an image with pixel coordinates and dimensions.",
+    "inputs": {
+      "image": { "name": "Image" },
+      "x": { "name": "X" },
+      "y": { "name": "Y" },
+      "width": { "name": "Width" },
+      "height": { "name": "Height" }
+    },
+    "outputs": {
+      "0": { "name": "Cropped Image" },
+      "1": { "name": "X" },
+      "2": { "name": "Y" },
+      "3": { "name": "Width" },
+      "4": { "name": "Height" }
+    }
+  },
+  "ImageGridTilePicker": {
+    "display_name": "MengBao AI · Grid Tile Picker",
+    "description": "Select one tile from an image grid.",
+    "inputs": {
+      "image": { "name": "Image" },
+      "grid": { "name": "Grid" },
+      "custom_rows": { "name": "Custom Rows" },
+      "custom_cols": { "name": "Custom Columns" },
+      "row": { "name": "Row" },
+      "column": { "name": "Column" }
+    },
+    "outputs": {
+      "0": { "name": "Tile" },
+      "1": { "name": "Row" },
+      "2": { "name": "Column" }
+    }
+  },
+  "WANGLoadImageUploadPaste": {
+    "display_name": "MengBao AI · Load Image",
+    "description": "Load an image by file selection or Ctrl+V clipboard paste.",
+    "inputs": {
+      "image_data": { "name": "Image Data" },
+      "filename": { "name": "Filename" }
+    },
+    "outputs": {
+      "0": { "name": "Image" },
+      "1": { "name": "Mask" },
+      "2": { "name": "Filename" },
+      "3": { "name": "Width" },
+      "4": { "name": "Height" }
+    }
+  },
+  "WANGPromptOrganizer": {
+    "display_name": "MengBao AI · Prompt Organizer",
+    "description": "Save, group, search, import, and export prompts.",
+    "inputs": {
+      "action": { "name": "Action" },
+      "group": { "name": "Group" },
+      "title": { "name": "Title" },
+      "prompt": { "name": "Prompt" },
+      "query": { "name": "Search Query" },
+      "tags": { "name": "Tags" },
+      "note": { "name": "Note" },
+      "merge_mode": { "name": "Merge Mode" },
+      "new_group": { "name": "New Group" },
+      "import_json": { "name": "Import JSON" },
+      "import_path": { "name": "Import Path" },
+      "export_path": { "name": "Export Path" }
+    },
+    "outputs": {
+      "0": { "name": "Selected Prompt" },
+      "1": { "name": "Results JSON" },
+      "2": { "name": "Titles" },
+      "3": { "name": "Status" }
+    }
+  },
+  "WANGPromptReader": {
+    "display_name": "MengBao AI · Prompt Reader",
+    "description": "Read a saved prompt by group and title.",
+    "inputs": {
+      "group": { "name": "Group" },
+      "title": { "name": "Title" },
+      "fallback_prompt": { "name": "Fallback Prompt" }
+    },
+    "outputs": {
+      "0": { "name": "Prompt" },
+      "1": { "name": "Status" }
+    }
   }
 }

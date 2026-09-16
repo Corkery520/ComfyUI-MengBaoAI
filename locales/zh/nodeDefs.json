@@ -48,5 +48,109 @@
       "1": { "name": "响应文本" },
       "2": { "name": "失败 URL" }
     }
+  },
+  "ImageGridSplit": {
+    "display_name": "萌宝AI·图片拆分",
+    "description": "将图片按 2x2、3x3、4x4 或自定义网格拆分。",
+    "inputs": {
+      "image": { "name": "图像" },
+      "grid": { "name": "网格" },
+      "custom_rows": { "name": "自定义行数" },
+      "custom_cols": { "name": "自定义列数" },
+      "trim_to_even_tiles": { "name": "裁齐网格" }
+    },
+    "outputs": {
+      "0": { "name": "图片块" },
+      "1": { "name": "行数" },
+      "2": { "name": "列数" },
+      "3": { "name": "图片块数量" }
+    }
+  },
+  "ImageFreeCrop": {
+    "display_name": "萌宝AI·自由裁剪",
+    "description": "按像素坐标和尺寸自由裁剪图片。",
+    "inputs": {
+      "image": { "name": "图像" },
+      "x": { "name": "X 坐标" },
+      "y": { "name": "Y 坐标" },
+      "width": { "name": "宽度" },
+      "height": { "name": "高度" }
+    },
+    "outputs": {
+      "0": { "name": "裁剪图像" },
+      "1": { "name": "X 坐标" },
+      "2": { "name": "Y 坐标" },
+      "3": { "name": "宽度" },
+      "4": { "name": "高度" }
+    }
+  },
+  "ImageGridTilePicker": {
+    "display_name": "萌宝AI·网格选图",
+    "description": "从图片网格中选择指定行列的图片块。",
+    "inputs": {
+      "image": { "name": "图像" },
+      "grid": { "name": "网格" },
+      "custom_rows": { "name": "自定义行数" },
+      "custom_cols": { "name": "自定义列数" },
+      "row": { "name": "行" },
+      "column": { "name": "列" }
+    },
+    "outputs": {
+      "0": { "name": "图片块" },
+      "1": { "name": "行" },
+      "2": { "name": "列" }
+    }
+  },
+  "WANGLoadImageUploadPaste": {
+    "display_name": "萌宝AI·加载图片",
+    "description": "通过文件选择或 Ctrl+V 粘贴加载图片。",
+    "inputs": {
+      "image_data": { "name": "图像数据" },
+      "filename": { "name": "文件名" }
+    },
+    "outputs": {
+      "0": { "name": "图像" },
+      "1": { "name": "遮罩" },
+      "2": { "name": "文件名" },
+      "3": { "name": "宽度" },
+      "4": { "name": "高度" }
+    }
+  },
+  "WANGPromptOrganizer": {
+    "display_name": "萌宝AI·提示词整理器",
+    "description": "保存、分组、搜索、导入和导出提示词。",
+    "inputs": {
+      "action": { "name": "操作" },
+      "group": { "name": "分组" },
+      "title": { "name": "标题" },
+      "prompt": { "name": "提示词" },
+      "query": { "name": "搜索内容" },
+      "tags": { "name": "标签" },
+      "note": { "name": "备注" },
+      "merge_mode": { "name": "合并方式" },
+      "new_group": { "name": "新分组" },
+      "import_json": { "name": "导入 JSON" },
+      "import_path": { "name": "导入路径" },
+      "export_path": { "name": "导出路径" }
+    },
+    "outputs": {
+      "0": { "name": "选中提示词" },
+      "1": { "name": "结果 JSON" },
+      "2": { "name": "标题列表" },
+      "3": { "name": "状态" }
+    }
+  },
+  "WANGPromptReader": {
+    "display_name": "萌宝AI·提示词读取",
+    "description": "按分组和标题读取已保存的提示词。",
+    "inputs": {
+      "group": { "name": "分组" },
+      "title": { "name": "标题" },
+      "fallback_prompt": { "name": "备用提示词" }
+    },
+    "outputs": {
+      "0": { "name": "提示词" },
+      "1": { "name": "状态" }
+    }
   }
 }

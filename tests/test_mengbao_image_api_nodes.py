@@ -1,4 +1,5 @@
 import base64
+import importlib
 import importlib.util
 import io
 import json
@@ -11,28 +12,28 @@ from unittest.mock import patch
 from PIL import Image
 
 
-MODULE_PATH = Path(__file__).resolve().parents[1] / "MengBao_image_api_nodes.py"
-PLUGIN_ROOT = MODULE_PATH.parent
-MODULE_SPEC = importlib.util.spec_from_file_location("mengbao_image_api_nodes", MODULE_PATH)
-if MODULE_SPEC is None or MODULE_SPEC.loader is None:
-    raise ImportError(f"Cannot load MengBao image API module from {MODULE_PATH}")
-node_module = importlib.util.module_from_spec(MODULE_SPEC)
-MODULE_SPEC.loader.exec_module(node_module)
+PLUGIN_ROOT = Path(__file__).resolve().parents[1]
+PACKAGE_NAME = "mengbao_node_pack_test"
 
 
 def load_node_pack():
-    package_name = "mengbao_node_pack_test"
     package_spec = importlib.util.spec_from_file_location(
-        package_name,
+        PACKAGE_NAME,
         PLUGIN_ROOT / "__init__.py",
         submodule_search_locations=[str(PLUGIN_ROOT)],
     )
     if package_spec is None or package_spec.loader is None:
         raise ImportError(f"Cannot load MengBao node pack from {PLUGIN_ROOT}")
     package = importlib.util.module_from_spec(package_spec)
-    sys.modules[package_name] = package
+    sys.modules[PACKAGE_NAME] = package
     package_spec.loader.exec_module(package)
     return package
+
+
+node_pack = load_node_pack()
+node_module = importlib.import_module(f"{PACKAGE_NAME}.nodes.image_api.generate")
+auth_module = importlib.import_module(f"{PACKAGE_NAME}.api.auth")
+image_utils = importlib.import_module(f"{PACKAGE_NAME}.utils.image")
 
 
 class FakeResponse:
@@ -57,11 +58,19 @@ class FakeResponse:
 
 class MengBaoImageAPITests(unittest.TestCase):
     def test_node_pack_centralizes_mappings_and_keeps_legacy_id(self):
-        node_pack = load_node_pack()
-        self.assertEqual(set(node_pack.NODE_CLASS_MAPPINGS), {"WANGImageAPI"})
+        expected_ids = {
+            "WANGImageAPI",
+            "ImageGridSplit",
+            "ImageFreeCrop",
+            "ImageGridTilePicker",
+            "WANGLoadImageUploadPaste",
+            "WANGPromptOrganizer",
+            "WANGPromptReader",
+        }
+        self.assertEqual(set(node_pack.NODE_CLASS_MAPPINGS), expected_ids)
         self.assertEqual(
-            node_pack.NODE_DISPLAY_NAME_MAPPINGS,
-            {"WANGImageAPI": "萌宝AI·图像生成"},
+            node_pack.NODE_DISPLAY_NAME_MAPPINGS["WANGImageAPI"],
+            "萌宝AI·图像生成",
         )
         self.assertEqual(
             set(node_pack.NODE_CLASS_MAPPINGS),
@@ -185,8 +194,8 @@ class MengBaoImageAPITests(unittest.TestCase):
                     "_call_media_api",
                     return_value={"data": [{"b64_json": encoded}]},
                 ) as api_mock, patch.object(
-                    node_module,
-                    "_image_tensor_to_png_bytes",
+                    image_utils,
+                    "image_tensor_to_png_bytes",
                     return_value=b"reference",
                 ) as encode_mock:
                     node_module.MengBaoImageAPI().generate(
@@ -231,8 +240,8 @@ class MengBaoImageAPITests(unittest.TestCase):
             "_call_media_api",
             return_value={"data": [{"b64_json": encoded}]},
         ) as api_mock, patch.object(
-            node_module,
-            "_image_tensor_to_png_bytes",
+            image_utils,
+            "image_tensor_to_png_bytes",
             return_value=b"reference",
         ) as encode_mock:
             node_module.MengBaoImageAPI().generate(
@@ -294,7 +303,7 @@ class MengBaoImageAPITests(unittest.TestCase):
         self.assertNotIn("background", params)
 
     def test_locale_files_cover_all_inputs_and_outputs(self):
-        plugin_root = Path(node_module.__file__).parent
+        plugin_root = PLUGIN_ROOT
         expected_inputs = set(node_module.MengBaoImageAPI.INPUT_TYPES()["required"])
         expected_inputs.update(node_module.MengBaoImageAPI.INPUT_TYPES()["optional"])
 
@@ -392,10 +401,14 @@ class MengBaoImageAPITests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary_directory:
             env_path = Path(temporary_directory) / ".env"
             env_path.write_text("OTHER_SETTING=keep\n", encoding="utf-8")
-            with patch.object(node_module, "ENV_PATH", env_path):
-                node_module._save_api_key("test-secret-key")
-                self.assertEqual(node_module._read_saved_api_key(), "test-secret-key")
-                self.assertEqual(node_module._connection_key("", ""), "test-secret-key")
+            with patch.object(auth_module, "ENV_PATH", env_path), patch.object(
+                auth_module,
+                "USER_DATA_DIRECTORY",
+                env_path.parent,
+            ), patch.object(auth_module, "LEGACY_ENV_PATHS", ()):
+                auth_module.save_api_key("test-secret-key")
+                self.assertEqual(auth_module.read_saved_api_key(), "test-secret-key")
+                self.assertEqual(auth_module.connection_key("", ""), "test-secret-key")
 
             env_text = env_path.read_text(encoding="utf-8")
             self.assertIn("OTHER_SETTING=keep", env_text)
