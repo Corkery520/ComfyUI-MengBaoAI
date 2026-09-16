@@ -184,14 +184,15 @@
   },
   "MengBaoImageConstraint": {
     "display_name": "萌宝图像约束",
-    "description": "在保持宽高比的前提下约束图片尺寸，必要时可居中裁剪。",
+    "description": "保持宽高比约束图片尺寸和单张 PNG 体积，默认不超过 10 MB，必要时可居中裁剪。",
     "inputs": {
       "image": { "name": "图像" },
       "max_width": { "name": "最大宽度" },
       "max_height": { "name": "最大高度" },
       "min_width": { "name": "最小宽度" },
       "min_height": { "name": "最小高度" },
-      "crop_if_required": { "name": "必要时裁剪" }
+      "crop_if_required": { "name": "必要时裁剪" },
+      "max_file_size_mb": { "name": "最大图片大小（MB）", "tooltip": "单张 PNG 最大体积（1 MB = 1024×1024 字节），0 为不限。超限时等比缩小，体积限制优先于最小尺寸；不包含保存节点追加的元数据。" }
     },
     "outputs": {
       "0": { "name": "图像" }

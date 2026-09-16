@@ -3,6 +3,8 @@ import math
 import torch
 import torch.nn.functional as functional
 
+from ...utils.image import image_tensor_to_png_bytes
+
 
 def _ensure_image_tensor(image):
     if not isinstance(image, torch.Tensor):
@@ -38,6 +40,39 @@ def _scale_bounds(width, height, max_width, max_height, min_width, min_height):
     return lower, upper
 
 
+def _constrain_file_size(image, max_file_size_mb):
+    limit = float(max_file_size_mb)
+    if not math.isfinite(limit) or limit < 0:
+        raise ValueError("Maximum file size must be a finite non-negative number")
+    if limit == 0:
+        return image.contiguous()
+
+    max_bytes = int(limit * 1024 * 1024)
+    source = image
+    source_height, source_width = source.shape[1:3]
+    scale = 1.0
+    while True:
+        # 同时检查 ComfyUI 保存常用压缩级别和 API 编码级别，不用张量内存估算文件大小。
+        largest_size = max(
+            max(
+                len(image_tensor_to_png_bytes(frame, compress_level=4, force_rgba=False)),
+                len(image_tensor_to_png_bytes(frame)),
+            )
+            for frame in image
+        )
+        if largest_size <= max_bytes:
+            return image.contiguous()
+        height, width = image.shape[1:3]
+        if height == 1 and width == 1:
+            raise ValueError("Maximum file size is too small to encode even a 1x1 PNG")
+
+        # 编码体积与像素数量不是严格线性关系，每次缩小后必须重新编码验证。
+        scale *= min(0.95, math.sqrt(max_bytes / largest_size) * 0.95)
+        target_height = max(1, int(source_height * scale))
+        target_width = max(1, int(source_width * scale))
+        image = _resize(source, target_height, target_width)
+
+
 class MengBaoImageConstraint:
     @classmethod
     def INPUT_TYPES(cls):
@@ -51,6 +86,16 @@ class MengBaoImageConstraint:
                 "min_width": ("INT", dict(minimum)),
                 "min_height": ("INT", dict(minimum)),
                 "crop_if_required": (["no", "yes"], {"default": "no"}),
+                "max_file_size_mb": (
+                    "FLOAT",
+                    {
+                        "default": 10.0,
+                        "min": 0.0,
+                        "max": 1024.0,
+                        "step": 0.1,
+                        "tooltip": "单张 PNG 最大体积（1 MB = 1024×1024 字节），0 为不限。超限时等比缩小，体积限制优先于最小尺寸；不包含保存节点追加的元数据。",
+                    },
+                ),
             }
         }
 
@@ -58,7 +103,7 @@ class MengBaoImageConstraint:
     RETURN_NAMES = ("image",)
     FUNCTION = "constrain"
     CATEGORY = "萌宝AI/图像处理"
-    DESCRIPTION = "在保持宽高比的前提下约束图片尺寸，必要时可居中裁剪。"
+    DESCRIPTION = "保持宽高比约束图片尺寸和单张 PNG 体积，默认不超过 10 MB，必要时可居中裁剪。"
     SEARCH_ALIASES = [
         "Meng",
         "MengBao",
@@ -74,6 +119,7 @@ class MengBaoImageConstraint:
         "萌宝图像约束",
         "图像约束",
         "图片尺寸限制",
+        "图片大小限制",
     ]
 
     def constrain(
@@ -84,6 +130,7 @@ class MengBaoImageConstraint:
         min_width,
         min_height,
         crop_if_required,
+        max_file_size_mb=10.0,
     ):
         image = _ensure_image_tensor(image)
         source_height, source_width = image.shape[1:3]
@@ -104,7 +151,11 @@ class MengBaoImageConstraint:
             scale = min(max(1.0, lower_scale), upper_scale)
             target_width = max(1, int(source_width * scale))
             target_height = max(1, int(source_height * scale))
-            return (_resize(image, target_height, target_width).contiguous(),)
+            return (
+                _constrain_file_size(
+                    _resize(image, target_height, target_width), max_file_size_mb
+                ),
+            )
 
         # 最大和最小尺寸互相冲突时，默认优先保证不超过最大尺寸。
         contained_scale = upper_scale if math.isfinite(upper_scale) else 1.0
@@ -112,7 +163,9 @@ class MengBaoImageConstraint:
         contained_height = max(1, int(source_height * contained_scale))
         if crop_if_required != "yes":
             return (
-                _resize(image, contained_height, contained_width).contiguous(),
+                _constrain_file_size(
+                    _resize(image, contained_height, contained_width), max_file_size_mb
+                ),
             )
 
         target_width = max(contained_width, min_width)
@@ -137,4 +190,4 @@ class MengBaoImageConstraint:
             left : left + target_width,
             :,
         ]
-        return (cropped.contiguous(),)
+        return (_constrain_file_size(cropped, max_file_size_mb),)

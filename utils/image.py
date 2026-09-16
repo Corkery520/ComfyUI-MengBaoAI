@@ -18,7 +18,9 @@ def json_text(payload: Any) -> str:
         return str(payload)
 
 
-def image_tensor_to_png_bytes(image: torch.Tensor) -> bytes:
+def image_tensor_to_png_bytes(
+    image: torch.Tensor, *, compress_level: int = 6, force_rgba: bool = True
+) -> bytes:
     if image.dim() == 4:
         image = image[0]
     if image.dim() != 3:
@@ -30,10 +32,10 @@ def image_tensor_to_png_bytes(image: torch.Tensor) -> bytes:
     array = image.detach().cpu().numpy()
     array = np.clip(array * 255.0, 0, 255).astype(np.uint8)
     pil_image = Image.fromarray(array)
-    if pil_image.mode != "RGBA":
+    if force_rgba and pil_image.mode != "RGBA":
         pil_image = pil_image.convert("RGBA")
     buffer = io.BytesIO()
-    pil_image.save(buffer, format="PNG")
+    pil_image.save(buffer, format="PNG", compress_level=compress_level)
     return buffer.getvalue()
 
 

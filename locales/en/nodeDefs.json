@@ -184,14 +184,15 @@
   },
   "MengBaoImageConstraint": {
     "display_name": "MengBao AI · Image Constraint",
-    "description": "Constrain image dimensions while preserving aspect ratio, with optional center cropping when limits conflict.",
+    "description": "Constrain image dimensions and per-image PNG size while preserving aspect ratio. The default file size limit is 10 MB, with optional center cropping when dimension limits conflict.",
     "inputs": {
       "image": { "name": "Image" },
       "max_width": { "name": "Maximum Width" },
       "max_height": { "name": "Maximum Height" },
       "min_width": { "name": "Minimum Width" },
       "min_height": { "name": "Minimum Height" },
-      "crop_if_required": { "name": "Crop If Required" }
+      "crop_if_required": { "name": "Crop If Required" },
+      "max_file_size_mb": { "name": "Maximum File Size (MB)", "tooltip": "Per-image PNG limit (1 MB = 1024×1024 bytes). 0 disables the limit. Images are scaled down proportionally when oversized, overriding minimum dimensions. Additional save-node metadata is excluded." }
     },
     "outputs": {
       "0": { "name": "Image" }

@@ -20,7 +20,7 @@
 | `WANGPromptReader` | 萌宝AI·提示词读取 | 在工作流中读取已保存提示词 |
 | `MengBaoEcommerceSettings` | MengBao AI电商设置 | 组合产品信息、电商参数、提示词和结构化 JSON |
 | `MengBaoSmartCollage` | 萌宝AI智能拼图 | 默认 4 个图片端口，可添加至 20 个，自动等比无间距拼接 |
-| `MengBaoImageConstraint` | 萌宝图像约束 | 保持宽高比限制图片尺寸，必要时居中裁剪 |
+| `MengBaoImageConstraint` | 萌宝图像约束 | 保持宽高比限制图片尺寸和单张 PNG 体积，默认不超过 10 MB |
 | `MengBaoGlobalAPIKey` | 萌宝全局API Key管理 | 通过一个密钥输入框保存或清除全局 API Key |
 
 带有 `WANG` 的历史内部 ID 为兼容旧工作流而保留。中英文显示名会跟随 ComfyUI 的 `Comfy.Locale` 实时切换。
@@ -37,6 +37,12 @@
 | `nano-banana-2-pro` | `banana-pro` | 14 |
 
 图像 API 使用固定服务地址 `https://api.lk888.ai`。默认模型为 `gpt-image-2`，比例与分辨率默认为自动，超时时间为 600 秒。节点支持任务进度、动态参考图、透明 PNG 提示词、余额自动刷新及 API Key 本地保存。
+
+## 图片体积约束
+
+将“萌宝AI智能拼图”的图像输出连接到“萌宝图像约束”，即可同时限制宽高和图片体积。“最大图片大小（MB）”默认为 10，设为 0 可关闭体积限制。
+
+体积按单张 8 位 PNG 编码计算（1 MB = 1024×1024 字节），同时检查压缩级别 4 和 6。超限时等比缩小并重新编码，直到符合上限，不移除 Alpha 透明通道。批量图像按体积最大的单张统一缩小，保持批次尺寸一致。体积上限优先于最小宽高；保存节点追加的工作流元数据和其他文件格式不在该 PNG 体积保证范围内。
 
 ## 全局 API Key
 

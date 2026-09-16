@@ -41,6 +41,7 @@ collage_module = importlib.import_module(
 constraint_module = importlib.import_module(
     f"{PACKAGE_NAME}.nodes.image_tools.constraint"
 )
+image_module = importlib.import_module(f"{PACKAGE_NAME}.utils.image")
 
 
 class ImageToolsTests(unittest.TestCase):
@@ -167,11 +168,119 @@ class ImageToolsTests(unittest.TestCase):
                 "min_width",
                 "min_height",
                 "crop_if_required",
+                "max_file_size_mb",
             ],
         )
         self.assertEqual(constraint_inputs["max_width"][1]["default"], 2048)
         self.assertEqual(constraint_inputs["max_height"][1]["default"], 2048)
         self.assertEqual(constraint_inputs["crop_if_required"][1]["default"], "no")
+        self.assertEqual(constraint_inputs["max_file_size_mb"][1]["default"], 10.0)
+
+    def constrain_file_size(self, image, limit, **dimensions):
+        options = dict(
+            max_width=0,
+            max_height=0,
+            min_width=0,
+            min_height=0,
+            crop_if_required="no",
+            max_file_size_mb=limit,
+        )
+        options.update(dimensions)
+        return constraint_module.MengBaoImageConstraint().constrain(
+            image, **options
+        )[0]
+
+    def assert_png_size_within_limit(self, image, limit):
+        for frame in image:
+            for compression, force_rgba in ((4, False), (6, True)):
+                data = image_module.image_tensor_to_png_bytes(
+                    frame, compress_level=compression, force_rgba=force_rgba
+                )
+                self.assertLessEqual(len(data), int(limit * 1024 * 1024))
+
+    def test_file_size_constraint_shrinks_noisy_png_without_changing_aspect_ratio(self):
+        image = torch.rand(
+            (1, 128, 256, 3), generator=torch.Generator().manual_seed(1)
+        )
+        limit = 0.02
+        self.assertGreater(
+            len(image_module.image_tensor_to_png_bytes(image)), limit * 1024**2
+        )
+
+        output = self.constrain_file_size(image, limit)
+
+        self.assertLess(output.shape[2], image.shape[2])
+        self.assertLessEqual(abs(output.shape[2] - 2 * output.shape[1]), 1)
+        self.assert_png_size_within_limit(output, limit)
+
+    def test_file_size_constraint_leaves_small_png_unchanged(self):
+        image = torch.zeros((1, 128, 256, 4))
+        output = self.constrain_file_size(image, 0.02)
+        torch.testing.assert_close(output, image)
+
+    def test_zero_file_size_limit_disables_compression_constraint(self):
+        image = torch.rand((1, 32, 64, 3))
+        output = self.constrain_file_size(image, 0)
+        torch.testing.assert_close(output, image)
+
+    def test_file_size_constraint_checks_each_batch_image_and_preserves_alpha(self):
+        image = torch.rand(
+            (2, 128, 128, 4), generator=torch.Generator().manual_seed(2)
+        )
+        image[0] = 0
+        image[:, :, :, 3] = 0.25
+
+        output = self.constrain_file_size(image, 0.01)
+
+        self.assertEqual(output.shape[0], 2)
+        self.assertEqual(output.shape[3], 4)
+        torch.testing.assert_close(
+            output[:, :, :, 3], torch.full(output.shape[:3], 0.25)
+        )
+        self.assert_png_size_within_limit(output, 0.01)
+
+    def test_file_size_constraint_takes_priority_over_minimum_dimensions(self):
+        image = torch.rand(
+            (1, 128, 256, 3), generator=torch.Generator().manual_seed(3)
+        )
+        output = self.constrain_file_size(
+            image, 0.01, min_width=256, min_height=128
+        )
+        self.assertLess(output.shape[2], 256)
+        self.assert_png_size_within_limit(output, 0.01)
+
+    def test_file_size_constraint_rejects_invalid_or_impossible_limits(self):
+        image = torch.zeros((1, 1, 1, 3))
+        for limit in (-1, float("nan"), float("inf")):
+            with self.subTest(limit=limit):
+                with self.assertRaisesRegex(ValueError, "finite non-negative"):
+                    self.constrain_file_size(image, limit)
+        with self.assertRaisesRegex(ValueError, "too small"):
+            self.constrain_file_size(image, 1 / 1024**2)
+
+    def test_file_size_constraint_applies_after_center_cropping(self):
+        image = torch.rand(
+            (1, 64, 128, 3), generator=torch.Generator().manual_seed(4)
+        )
+        output = self.constrain_file_size(
+            image, 0.004, max_width=64, max_height=64,
+            min_width=64, min_height=64, crop_if_required="yes",
+        )
+        self.assertEqual(output.shape[1], output.shape[2])
+        self.assert_png_size_within_limit(output, 0.004)
+
+    def test_default_ten_mb_limit_shrinks_a_large_png_with_legacy_arguments(self):
+        image = torch.rand(
+            (1, 1536, 3072, 3), generator=torch.Generator().manual_seed(5)
+        )
+        self.assertGreater(len(image_module.image_tensor_to_png_bytes(image)), 10 * 1024**2)
+
+        (output,) = constraint_module.MengBaoImageConstraint().constrain(
+            image, 0, 0, 0, 0, "no"
+        )
+
+        self.assertLess(output.shape[2], image.shape[2])
+        self.assert_png_size_within_limit(output, 10)
 
     def test_smart_collage_uses_balanced_two_by_two_layout_for_four_images(self):
         images = (

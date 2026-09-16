@@ -81,6 +81,7 @@ const constraintNode = {
   widgets: [
     { name: "max_width", options: {} },
     { name: "crop_if_required", options: {} },
+    { name: "max_file_size_mb", value: 10, options: {} },
   ],
   inputs: [{ name: "image" }],
   outputs: [{ name: "image" }],
@@ -91,6 +92,12 @@ assert.equal(constraintNode.title, "MengBao AI · Image Constraint");
 assert.equal(constraintNode.widgets[0].label, "Maximum Width");
 assert.equal(constraintNode.widgets[1].options.getOptionLabel("yes"), "Yes");
 assert.equal(constraintNode.inputs[0].label, "Image");
+assert.equal(constraintNode.widgets[2].label, "Maximum File Size (MB)");
+localization.applyNodeLocalization(constraintNode, "zh-CN");
+assert.equal(constraintNode.widgets[2].label, "最大图片大小（MB）");
+assert.equal(constraintNode.widgets[2].value, 10);
+localization.applyNodeLocalization(constraintNode, "fr");
+assert.equal(constraintNode.widgets[2].label, "Maximum File Size (MB)");
 
 const ecommerceNode = {
   type: "MengBaoEcommerceSettings",
