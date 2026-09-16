@@ -328,11 +328,15 @@ class MengBaoImageAPI:
         "萌宝AI 图像生成节点：使用 TT Image 与 Nano Banana 模型生成和编辑图像。"
     )
     SEARCH_ALIASES = [
+        "Meng",
         "MengBao",
+        "MengBaoAI",
+        "MengBao AI",
         "WANGImageAPI",
         "MengBao Image API",
         "MengBao-Image-API",
         "MengBao AI Image Generation",
+        "MengBaoAI Image Generation",
         "WANG Image API",
         "萌宝",
         "萌宝AI",

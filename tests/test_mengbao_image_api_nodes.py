@@ -392,15 +392,50 @@ class MengBaoImageAPITests(unittest.TestCase):
         self.assertEqual(inputs["timeout"][1]["default"], 600)
 
     def test_node_search_aliases_include_current_brand_name(self):
+        brand_aliases = {
+            "Meng",
+            "MengBao",
+            "MengBaoAI",
+            "MengBao AI",
+            "萌宝",
+            "萌宝AI",
+        }
         for node_id, node_class in node_pack.NODE_CLASS_MAPPINGS.items():
             with self.subTest(node_id=node_id):
-                aliases = node_class.SEARCH_ALIASES
-                self.assertIn("MengBao", aliases)
+                aliases = set(node_class.SEARCH_ALIASES)
+                self.assertTrue(brand_aliases.issubset(aliases))
                 self.assertIn(node_id, aliases)
 
         image_aliases = node_module.MengBaoImageAPI.SEARCH_ALIASES
         self.assertIn("MengBao-Image-API", image_aliases)
         self.assertIn("萌宝图像 API", image_aliases)
+
+        bilingual_feature_aliases = {
+            "WANGImageAPI": ("MengBaoAI Image Generation", "萌宝AI 图像生成"),
+            "ImageGridSplit": ("MengBaoAI Image Split", "萌宝AI 图片拆分"),
+            "ImageFreeCrop": ("MengBaoAI Image Crop", "萌宝AI 自由裁剪"),
+            "ImageGridTilePicker": (
+                "MengBaoAI Grid Tile Picker",
+                "萌宝AI 网格选图",
+            ),
+            "WANGLoadImageUploadPaste": (
+                "MengBaoAI Load Image",
+                "萌宝AI 加载图片",
+            ),
+            "WANGPromptOrganizer": (
+                "MengBaoAI Prompt Organizer",
+                "萌宝AI 提示词整理器",
+            ),
+            "WANGPromptReader": (
+                "MengBaoAI Prompt Reader",
+                "萌宝AI 提示词读取",
+            ),
+        }
+        for node_id, expected_aliases in bilingual_feature_aliases.items():
+            with self.subTest(node_id=node_id):
+                aliases = node_pack.NODE_CLASS_MAPPINGS[node_id].SEARCH_ALIASES
+                for alias in expected_aliases:
+                    self.assertIn(alias, aliases)
 
     def test_saved_api_key_uses_local_env_without_exposing_it(self):
         with tempfile.TemporaryDirectory() as temporary_directory:

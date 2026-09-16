@@ -51,10 +51,17 @@ class WANGPromptOrganizer:
     CATEGORY = "萌宝AI/提示词"
     DESCRIPTION = "保存、分组、搜索、导入和导出提示词。"
     SEARCH_ALIASES = [
+        "Meng",
         "MengBao",
+        "MengBaoAI",
+        "MengBao AI",
         "WANGPromptOrganizer",
         "WANG Prompt Organizer",
+        "MengBaoAI Prompt Organizer",
         "Prompt Organizer",
+        "萌宝",
+        "萌宝AI",
+        "萌宝AI 提示词整理器",
         "提示词整理器",
     ]
 
@@ -230,10 +237,17 @@ class WANGPromptReader:
     CATEGORY = "萌宝AI/提示词"
     DESCRIPTION = "按分组和标题读取已保存的提示词。"
     SEARCH_ALIASES = [
+        "Meng",
         "MengBao",
+        "MengBaoAI",
+        "MengBao AI",
         "WANGPromptReader",
         "WANG Prompt Reader",
+        "MengBaoAI Prompt Reader",
         "Prompt Reader",
+        "萌宝",
+        "萌宝AI",
+        "萌宝AI 提示词读取",
         "提示词读取",
     ]
 

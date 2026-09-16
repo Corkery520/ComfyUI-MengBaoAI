@@ -91,10 +91,17 @@ class WANGLoadImageUploadPaste:
     CATEGORY = "萌宝AI/图像处理"
     DESCRIPTION = "通过文件选择或 Ctrl+V 粘贴加载图片，并输出遮罩和尺寸。"
     SEARCH_ALIASES = [
+        "Meng",
         "MengBao",
+        "MengBaoAI",
+        "MengBao AI",
         "WANGLoadImageUploadPaste",
         "WANG Load Image Upload Paste",
+        "MengBaoAI Load Image",
         "Load Image",
+        "萌宝",
+        "萌宝AI",
+        "萌宝AI 加载图片",
         "加载图片",
         "粘贴图片",
     ]

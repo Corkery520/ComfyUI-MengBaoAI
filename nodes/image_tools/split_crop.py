@@ -32,9 +32,16 @@ class ImageGridSplit:
     CATEGORY = "萌宝AI/图像处理"
     DESCRIPTION = "将图片按 2x2、3x3、4x4 或自定义网格拆分为图片批次。"
     SEARCH_ALIASES = [
+        "Meng",
         "MengBao",
+        "MengBaoAI",
+        "MengBao AI",
         "ImageGridSplit",
         "Image Grid Split",
+        "MengBaoAI Image Split",
+        "萌宝",
+        "萌宝AI",
+        "萌宝AI 图片拆分",
         "图片拆分",
         "九宫格",
     ]
@@ -105,9 +112,16 @@ class ImageFreeCrop:
     CATEGORY = "萌宝AI/图像处理"
     DESCRIPTION = "按像素坐标和尺寸自由裁剪图片。"
     SEARCH_ALIASES = [
+        "Meng",
         "MengBao",
+        "MengBaoAI",
+        "MengBao AI",
         "ImageFreeCrop",
         "Image Free Crop",
+        "MengBaoAI Image Crop",
+        "萌宝",
+        "萌宝AI",
+        "萌宝AI 自由裁剪",
         "自由裁剪",
         "图片裁剪",
     ]
@@ -145,9 +159,16 @@ class ImageGridTilePicker:
     CATEGORY = "萌宝AI/图像处理"
     DESCRIPTION = "从网格中选择指定行列的单张图片。"
     SEARCH_ALIASES = [
+        "Meng",
         "MengBao",
+        "MengBaoAI",
+        "MengBao AI",
         "ImageGridTilePicker",
         "Image Grid Tile Picker",
+        "MengBaoAI Grid Tile Picker",
+        "萌宝",
+        "萌宝AI",
+        "萌宝AI 网格选图",
         "网格选图",
     ]
 
