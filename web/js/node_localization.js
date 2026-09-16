@@ -33,6 +33,30 @@ const NODE_LABELS = {
       outputs: ["Tile", "Row", "Column"],
       options: { custom: "Custom" },
     },
+    MengBaoSmartCollage: {
+      title: "MengBao AI · Smart Collage",
+      widgets: {},
+      inputs: {
+        image_1: "Image 1",
+        image_2: "Image 2",
+        image_3: "Image 3",
+        image_4: "Image 4",
+      },
+      outputs: ["Image"],
+    },
+    MengBaoImageConstraint: {
+      title: "MengBao AI · Image Constraint",
+      widgets: {
+        max_width: "Maximum Width",
+        max_height: "Maximum Height",
+        min_width: "Minimum Width",
+        min_height: "Minimum Height",
+        crop_if_required: "Crop If Required",
+      },
+      inputs: { image: "Image" },
+      outputs: ["Image"],
+      options: { no: "No", yes: "Yes" },
+    },
     WANGLoadImageUploadPaste: {
       title: "MengBao AI · Load Image",
       widgets: {},
@@ -157,6 +181,30 @@ const NODE_LABELS = {
       inputs: { image: "图像" },
       outputs: ["图片块", "行", "列"],
       options: { custom: "自定义" },
+    },
+    MengBaoSmartCollage: {
+      title: "萌宝AI智能拼图",
+      widgets: {},
+      inputs: {
+        image_1: "图片 1",
+        image_2: "图片 2",
+        image_3: "图片 3",
+        image_4: "图片 4",
+      },
+      outputs: ["图像"],
+    },
+    MengBaoImageConstraint: {
+      title: "萌宝图像约束",
+      widgets: {
+        max_width: "最大宽度",
+        max_height: "最大高度",
+        min_width: "最小宽度",
+        min_height: "最小高度",
+        crop_if_required: "必要时裁剪",
+      },
+      inputs: { image: "图像" },
+      outputs: ["图像"],
+      options: { no: "否", yes: "是" },
     },
     WANGLoadImageUploadPaste: {
       title: "萌宝AI·加载图片",

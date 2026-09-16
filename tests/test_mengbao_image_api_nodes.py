@@ -67,6 +67,8 @@ class MengBaoImageAPITests(unittest.TestCase):
             "WANGPromptOrganizer",
             "WANGPromptReader",
             "MengBaoEcommerceSettings",
+            "MengBaoSmartCollage",
+            "MengBaoImageConstraint",
         }
         self.assertEqual(set(node_pack.NODE_CLASS_MAPPINGS), expected_ids)
         self.assertEqual(
@@ -434,6 +436,14 @@ class MengBaoImageAPITests(unittest.TestCase):
             "MengBaoEcommerceSettings": (
                 "MengBao AI Ecommerce Settings",
                 "萌宝AI 电商设置",
+            ),
+            "MengBaoSmartCollage": (
+                "MengBao AI Smart Collage",
+                "萌宝AI 智能拼图",
+            ),
+            "MengBaoImageConstraint": (
+                "MengBao AI Image Constraint",
+                "萌宝 图像约束",
             ),
         }
         for node_id, expected_aliases in bilingual_feature_aliases.items():

@@ -73,6 +73,8 @@ jobs:
               "nodes/image_api/generate.py",
               "nodes/image_tools/split_crop.py",
               "nodes/image_tools/load_image.py",
+              "nodes/image_tools/collage.py",
+              "nodes/image_tools/constraint.py",
               "nodes/prompt/organizer.py",
               "nodes/ecommerce/settings.py",
               "api/auth.py",

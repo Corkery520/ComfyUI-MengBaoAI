@@ -1,6 +1,6 @@
 # ComfyUI-MengBaoAI
 
-萌宝AI ComfyUI 综合节点包。一站式集成图像生成、电商设置、图片拆分与裁剪、图片加载、提示词管理，并为后续视频和多模态节点提供统一扩展结构。
+萌宝AI ComfyUI 综合节点包。一站式集成图像生成、电商设置、智能拼图、尺寸约束、图片拆分与裁剪、图片加载、提示词管理，并为后续视频和多模态节点提供统一扩展结构。
 
 - GitHub：<https://github.com/Corkery520/ComfyUI-MengBaoAI>
 - Comfy Registry ID：`mengbaoai`
@@ -19,6 +19,8 @@
 | `WANGPromptOrganizer` | 萌宝AI·提示词整理器 | 保存、分组、搜索、导入和导出提示词 |
 | `WANGPromptReader` | 萌宝AI·提示词读取 | 在工作流中读取已保存提示词 |
 | `MengBaoEcommerceSettings` | MengBao AI电商设置 | 组合产品信息、电商参数、提示词和结构化 JSON |
+| `MengBaoSmartCollage` | 萌宝AI智能拼图 | 一至四张图片自动纵向或 2x2 无间距拼接 |
+| `MengBaoImageConstraint` | 萌宝图像约束 | 保持宽高比限制图片尺寸，必要时居中裁剪 |
 
 带有 `WANG` 的历史内部 ID 为兼容旧工作流而保留。中英文显示名会跟随 ComfyUI 的 `Comfy.Locale` 实时切换。
 
@@ -94,6 +96,8 @@ ComfyUI-MengBaoAI/
 │   ├── image_api/generate.py
 │   ├── image_tools/split_crop.py
 │   ├── image_tools/load_image.py
+│   ├── image_tools/collage.py
+│   ├── image_tools/constraint.py
 │   ├── prompt/organizer.py
 │   └── ecommerce/settings.py
 ├── api/

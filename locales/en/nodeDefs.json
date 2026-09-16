@@ -153,6 +153,34 @@
       "1": { "name": "Status" }
     }
   },
+  "MengBaoSmartCollage": {
+    "display_name": "MengBao AI · Smart Collage",
+    "description": "Arrange one to four images into a gapless collage while preserving each image's aspect ratio.",
+    "inputs": {
+      "image_1": { "name": "Image 1" },
+      "image_2": { "name": "Image 2" },
+      "image_3": { "name": "Image 3" },
+      "image_4": { "name": "Image 4" }
+    },
+    "outputs": {
+      "0": { "name": "Image" }
+    }
+  },
+  "MengBaoImageConstraint": {
+    "display_name": "MengBao AI · Image Constraint",
+    "description": "Constrain image dimensions while preserving aspect ratio, with optional center cropping when limits conflict.",
+    "inputs": {
+      "image": { "name": "Image" },
+      "max_width": { "name": "Maximum Width" },
+      "max_height": { "name": "Maximum Height" },
+      "min_width": { "name": "Minimum Width" },
+      "min_height": { "name": "Minimum Height" },
+      "crop_if_required": { "name": "Crop If Required" }
+    },
+    "outputs": {
+      "0": { "name": "Image" }
+    }
+  },
   "MengBaoEcommerceSettings": {
     "display_name": "MengBao AI · E-commerce Settings",
     "description": "Configure product details and e-commerce image parameters, then output a reusable prompt and JSON settings.",

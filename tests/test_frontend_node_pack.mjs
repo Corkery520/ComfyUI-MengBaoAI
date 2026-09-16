@@ -64,6 +64,34 @@ assert.equal(node.widgets[0].options.getOptionLabel("custom"), "自定义");
 assert.equal(node.outputs[3].label, "图片块数量");
 assert.equal(registeredExtension.name, "MengBaoAI.node_localization");
 
+const collageNode = {
+  type: "MengBaoSmartCollage",
+  widgets: [],
+  inputs: [{ name: "image_1" }, { name: "image_4" }],
+  outputs: [{ name: "image" }],
+  setDirtyCanvas() {},
+};
+localization.applyNodeLocalization(collageNode, "zh-CN");
+assert.equal(collageNode.title, "萌宝AI智能拼图");
+assert.equal(collageNode.inputs[0].label, "图片 1");
+assert.equal(collageNode.outputs[0].label, "图像");
+
+const constraintNode = {
+  type: "MengBaoImageConstraint",
+  widgets: [
+    { name: "max_width", options: {} },
+    { name: "crop_if_required", options: {} },
+  ],
+  inputs: [{ name: "image" }],
+  outputs: [{ name: "image" }],
+  setDirtyCanvas() {},
+};
+localization.applyNodeLocalization(constraintNode, "en");
+assert.equal(constraintNode.title, "MengBao AI · Image Constraint");
+assert.equal(constraintNode.widgets[0].label, "Maximum Width");
+assert.equal(constraintNode.widgets[1].options.getOptionLabel("yes"), "Yes");
+assert.equal(constraintNode.inputs[0].label, "Image");
+
 const ecommerceNode = {
   type: "MengBaoEcommerceSettings",
   widgets: [

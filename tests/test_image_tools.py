@@ -35,6 +35,12 @@ split_module = importlib.import_module(
 load_module = importlib.import_module(
     f"{PACKAGE_NAME}.nodes.image_tools.load_image"
 )
+collage_module = importlib.import_module(
+    f"{PACKAGE_NAME}.nodes.image_tools.collage"
+)
+constraint_module = importlib.import_module(
+    f"{PACKAGE_NAME}.nodes.image_tools.constraint"
+)
 
 
 class ImageToolsTests(unittest.TestCase):
@@ -123,6 +129,121 @@ class ImageToolsTests(unittest.TestCase):
         self.assertEqual(filename, "clipboard_image.png")
         self.assertEqual((width, height), (3, 2))
         self.assertAlmostEqual(float(mask[0, 0]), 1.0 - 128 / 255.0, places=5)
+
+    def test_smart_collage_stacks_one_to_three_images_vertically(self):
+        first = torch.full((1, 12, 16, 3), 0.1)
+        second = torch.full((1, 10, 13, 3), 0.5)
+        third = torch.full((1, 14, 10, 3), 0.9)
+
+        (collage,) = collage_module.MengBaoSmartCollage().collage(
+            first,
+            second,
+            third,
+            None,
+        )
+
+        self.assertEqual(tuple(collage.shape), (1, 46, 16, 3))
+        self.assertAlmostEqual(float(collage[0, 2, 2, 0]), 0.1, places=4)
+        self.assertAlmostEqual(float(collage[0, 15, 2, 0]), 0.5, places=4)
+        self.assertAlmostEqual(float(collage[0, 35, 2, 0]), 0.9, places=4)
+
+    def test_new_image_tool_inputs_match_the_reference_nodes(self):
+        collage_inputs = collage_module.MengBaoSmartCollage.INPUT_TYPES()
+        self.assertEqual(collage_inputs["required"], {})
+        self.assertEqual(
+            list(collage_inputs["optional"]),
+            ["image_1", "image_2", "image_3", "image_4"],
+        )
+
+        constraint_inputs = constraint_module.MengBaoImageConstraint.INPUT_TYPES()[
+            "required"
+        ]
+        self.assertEqual(
+            list(constraint_inputs),
+            [
+                "image",
+                "max_width",
+                "max_height",
+                "min_width",
+                "min_height",
+                "crop_if_required",
+            ],
+        )
+        self.assertEqual(constraint_inputs["max_width"][1]["default"], 2048)
+        self.assertEqual(constraint_inputs["max_height"][1]["default"], 2048)
+        self.assertEqual(constraint_inputs["crop_if_required"][1]["default"], "no")
+
+    def test_smart_collage_uses_balanced_two_by_two_layout_for_four_images(self):
+        images = (
+            torch.full((1, 192, 256, 3), 0.1),
+            torch.full((1, 133, 173, 3), 0.3),
+            torch.full((1, 168, 121, 3), 0.6),
+            torch.full((1, 99, 132, 3), 0.9),
+        )
+
+        (collage,) = collage_module.MengBaoSmartCollage().collage(*images)
+
+        self.assertEqual(tuple(collage.shape), (1, 437, 505, 3))
+        self.assertAlmostEqual(float(collage[0, 50, 50, 0]), 0.1, places=4)
+        self.assertAlmostEqual(float(collage[0, 50, 400, 0]), 0.3, places=4)
+        self.assertAlmostEqual(float(collage[0, 350, 50, 0]), 0.6, places=4)
+        self.assertAlmostEqual(float(collage[0, 350, 400, 0]), 0.9, places=4)
+
+    def test_smart_collage_requires_at_least_one_image(self):
+        with self.assertRaisesRegex(ValueError, "At least one IMAGE"):
+            collage_module.MengBaoSmartCollage().collage(None, None, None, None)
+
+    def test_image_constraint_preserves_aspect_ratio_inside_maximum_size(self):
+        image = torch.zeros((1, 10, 20, 3), dtype=torch.float32)
+
+        (constrained,) = constraint_module.MengBaoImageConstraint().constrain(
+            image,
+            max_width=10,
+            max_height=10,
+            min_width=0,
+            min_height=0,
+            crop_if_required="no",
+        )
+
+        self.assertEqual(tuple(constrained.shape), (1, 5, 10, 3))
+
+    def test_image_constraint_can_crop_when_minimum_and_maximum_conflict(self):
+        image = torch.zeros((1, 10, 20, 3), dtype=torch.float32)
+        image[:, :, :10, :] = 1.0
+
+        (contained,) = constraint_module.MengBaoImageConstraint().constrain(
+            image,
+            max_width=10,
+            max_height=10,
+            min_width=10,
+            min_height=10,
+            crop_if_required="no",
+        )
+        (cropped,) = constraint_module.MengBaoImageConstraint().constrain(
+            image,
+            max_width=10,
+            max_height=10,
+            min_width=10,
+            min_height=10,
+            crop_if_required="yes",
+        )
+
+        self.assertEqual(tuple(contained.shape), (1, 5, 10, 3))
+        self.assertEqual(tuple(cropped.shape), (1, 10, 10, 3))
+
+    def test_new_image_tools_are_registered_with_expected_names(self):
+        expected = {
+            "MengBaoSmartCollage": "萌宝AI智能拼图",
+            "MengBaoImageConstraint": "萌宝图像约束",
+        }
+        for node_id, display_name in expected.items():
+            with self.subTest(node_id=node_id):
+                node_class = node_pack.NODE_CLASS_MAPPINGS[node_id]
+                self.assertEqual(
+                    node_pack.NODE_DISPLAY_NAME_MAPPINGS[node_id],
+                    display_name,
+                )
+                self.assertEqual(node_class.CATEGORY, "萌宝AI/图像处理")
 
 
 if __name__ == "__main__":

@@ -153,6 +153,34 @@
       "1": { "name": "状态" }
     }
   },
+  "MengBaoSmartCollage": {
+    "display_name": "萌宝AI智能拼图",
+    "description": "将一至四张图片自动排列为无间距拼图，并保持每张图片的宽高比。",
+    "inputs": {
+      "image_1": { "name": "图片 1" },
+      "image_2": { "name": "图片 2" },
+      "image_3": { "name": "图片 3" },
+      "image_4": { "name": "图片 4" }
+    },
+    "outputs": {
+      "0": { "name": "图像" }
+    }
+  },
+  "MengBaoImageConstraint": {
+    "display_name": "萌宝图像约束",
+    "description": "在保持宽高比的前提下约束图片尺寸，必要时可居中裁剪。",
+    "inputs": {
+      "image": { "name": "图像" },
+      "max_width": { "name": "最大宽度" },
+      "max_height": { "name": "最大高度" },
+      "min_width": { "name": "最小宽度" },
+      "min_height": { "name": "最小高度" },
+      "crop_if_required": { "name": "必要时裁剪" }
+    },
+    "outputs": {
+      "0": { "name": "图像" }
+    }
+  },
   "MengBaoEcommerceSettings": {
     "display_name": "MengBao AI电商设置",
     "description": "集中配置产品信息与电商图片参数，输出可复用的提示词和 JSON 设置。",

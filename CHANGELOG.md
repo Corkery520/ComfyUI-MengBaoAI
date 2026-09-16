@@ -16,6 +16,9 @@ All notable changes to this project are documented in this file.
 - Added the `MengBaoEcommerceSettings` node with product information, layout,
   typography, reverse-page, and model controls based on the MengBaoAI one-click
   e-commerce workflow.
+- Added `MengBaoSmartCollage` with the reference one-to-four image layout rules.
+- Added `MengBaoImageConstraint` for aspect-preserving size limits and optional
+  center cropping when minimum and maximum constraints conflict.
 
 ### Changed
 
@@ -25,6 +28,6 @@ All notable changes to this project are documented in this file.
 
 ### Compatibility
 
-- Preserved all seven historical ComfyUI node IDs while adding the new e-commerce settings node.
+- Preserved all seven historical ComfyUI node IDs while adding new e-commerce and image utility nodes.
 - Preserved `/wang_prompt_organizer/*` HTTP routes for existing frontend integrations.
 - Kept the old `mengbao-image-api` Registry package as a separate Legacy upgrade path.
