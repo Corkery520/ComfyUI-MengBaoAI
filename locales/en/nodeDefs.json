@@ -1,11 +1,11 @@
 {
   "WANGImageAPI": {
-    "display_name": "MengBao-Image-API",
-    "description": "Generate and edit images with TT Image and Nano Banana models.",
+    "display_name": "MengBao AI · Image Generation",
+    "description": "Generate and edit images with TT Image and Nano Banana models in the MengBao AI node pack.",
     "inputs": {
       "prompt": { "name": "Prompt" },
       "connection_json": { "name": "Connection JSON" },
-      "api_key": { "name": "API Key" },
+      "api_key": { "name": "API Key / Connection JSON" },
       "model_type": { "name": "Model" },
       "batch_size": { "name": "Batch Size" },
       "tt2_size": { "name": "Legacy Size" },
@@ -30,7 +30,18 @@
       "image_2": { "name": "Reference Image 2" },
       "image_3": { "name": "Reference Image 3" },
       "image_4": { "name": "Reference Image 4" },
-      "image_5": { "name": "Reference Image 5" }
+      "image_5": { "name": "Reference Image 5" },
+      "image_6": { "name": "Reference Image 6" },
+      "image_7": { "name": "Reference Image 7" },
+      "image_8": { "name": "Reference Image 8" },
+      "image_9": { "name": "Reference Image 9" },
+      "image_10": { "name": "Reference Image 10" },
+      "image_11": { "name": "Reference Image 11" },
+      "image_12": { "name": "Reference Image 12" },
+      "image_13": { "name": "Reference Image 13" },
+      "image_14": { "name": "Reference Image 14" },
+      "image_15": { "name": "Reference Image 15" },
+      "image_16": { "name": "Reference Image 16" }
     },
     "outputs": {
       "0": { "name": "Images" },

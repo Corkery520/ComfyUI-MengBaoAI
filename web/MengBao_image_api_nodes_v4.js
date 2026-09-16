@@ -4,6 +4,15 @@ import { api } from "../../../scripts/api.js";
 const NODE_CLASS = "WANGImageAPI";
 const REGISTRATION_URL = "https://corkery.ai/api/console/keys";
 const FEEDBACK_MESSAGE = "有bug和使用问题请联系微信：Corkery520";
+const REFERENCE_INPUT_PREFIX = "image_";
+const DEFAULT_REFERENCE_INPUT_COUNT = 3;
+const MAX_REFERENCE_INPUT_COUNT = 16;
+const MODEL_REFERENCE_LIMITS = {
+  "gpt-image-2": 14,
+  "gpt-image-2.5": 16,
+  "nano-banana-2": 14,
+  "nano-banana-2-pro": 14,
+};
 
 const MODEL_WIDGETS = {
   "gpt-image-2": [
@@ -31,7 +40,7 @@ const MODEL_WIDGETS = {
 };
 
 const MODEL_SPECIFIC_WIDGETS = [...new Set(Object.values(MODEL_WIDGETS).flat())];
-const ALWAYS_HIDDEN_WIDGETS = ["tt2_size", "ui_language"];
+const ALWAYS_HIDDEN_WIDGETS = ["connection_json", "tt2_size", "ui_language"];
 const LEGACY_WIDGET_NAMES = [
   "prompt",
   "connection_json",
@@ -72,12 +81,12 @@ const TRANSPARENT_BACKGROUND_PROMPTS = {
 
 const TRANSLATIONS = {
   en: {
-    title: "MengBao-Image-API",
-    description: "Generate and edit images with TT Image and Nano Banana models.",
+    title: "MengBao AI · Image Generation",
+    description: "Generate and edit images with TT Image and Nano Banana models in the MengBao AI node pack.",
     widgets: {
       prompt: "Prompt",
       connection_json: "Connection JSON",
-      api_key: "API Key",
+      api_key: "API Key / Connection JSON",
       model_type: "Model",
       batch_size: "Batch Size",
       tt2_size: "Legacy Size",
@@ -128,19 +137,29 @@ const TRANSLATIONS = {
       balance: "Balance",
       empty: "No cached balance. Click Refresh Balance.",
       register: "Register API",
+      save: "Save API",
+      saving: "Saving...",
+      saved: "API Key saved locally.",
       refresh: "Refresh Balance",
       feedback: "Feedback",
       refreshing: "Refreshing...",
       apiKeyRequired: "Enter an API Key before refreshing the balance.",
     },
+    references: {
+      add: "Add Reference Image",
+      remove: "Remove Reference Image",
+      minimum: "Minimum 3",
+      limit: "Reference image limit reached",
+      overLimit: "Connected references exceed this model's limit",
+    },
   },
   zh: {
-    title: "萌宝图像 API",
-    description: "使用 TT Image 与 Nano Banana 模型生成和编辑图像。",
+    title: "萌宝AI·图像生成",
+    description: "萌宝AI 节点包中的图像生成节点，使用 TT Image 与 Nano Banana 模型生成和编辑图像。",
     widgets: {
       prompt: "提示词",
       connection_json: "连接 JSON",
-      api_key: "API 密钥",
+      api_key: "API 密钥 / 连接 JSON",
       model_type: "模型",
       batch_size: "生成数量",
       tt2_size: "旧版尺寸",
@@ -191,13 +210,28 @@ const TRANSLATIONS = {
       balance: "余额",
       empty: "暂无余额缓存，请点击“刷新余额”按钮刷新",
       register: "注册API",
+      save: "保存API",
+      saving: "保存中...",
+      saved: "API Key 已保存到本机。",
       refresh: "刷新余额",
       feedback: "问题反馈",
       refreshing: "查询中...",
       apiKeyRequired: "请先输入 API Key 密钥，再刷新余额。",
     },
+    references: {
+      add: "添加参考图",
+      remove: "删除参考图",
+      minimum: "最少保留 3 个",
+      limit: "已达参考图上限",
+      overLimit: "已连接参考图超过当前模型上限",
+    },
   },
 };
+
+for (let index = 1; index <= MAX_REFERENCE_INPUT_COUNT; index += 1) {
+  TRANSLATIONS.en.inputs[`${REFERENCE_INPUT_PREFIX}${index}`] = `Reference Image ${index}`;
+  TRANSLATIONS.zh.inputs[`${REFERENCE_INPUT_PREFIX}${index}`] = `参考图 ${index}`;
+}
 
 const LOCALIZED_OPTION_WIDGETS = new Set([
   "tt2_size",
@@ -223,6 +257,124 @@ function currentLanguage() {
 
 function findWidget(node, name) {
   return node.widgets?.find((widget) => widget.name === name);
+}
+
+function referenceInputNumber(input) {
+  const match = String(input?.name || "").match(/^image_(\d+)$/);
+  if (!match) {
+    return null;
+  }
+  const number = Number(match[1]);
+  return number >= 1 && number <= MAX_REFERENCE_INPUT_COUNT ? number : null;
+}
+
+function referenceInputs(node) {
+  return (node.inputs || [])
+    .map((input, index) => ({ input, index, number: referenceInputNumber(input) }))
+    .filter((entry) => entry.number !== null)
+    .sort((left, right) => left.number - right.number);
+}
+
+function referenceLimit(node) {
+  const model = findWidget(node, "model_type")?.value;
+  return MODEL_REFERENCE_LIMITS[model] || DEFAULT_REFERENCE_INPUT_COUNT;
+}
+
+function nextReferenceInputNumber(node, limit = MAX_REFERENCE_INPUT_COUNT) {
+  const used = new Set(referenceInputs(node).map((entry) => entry.number));
+  for (let number = 1; number <= limit; number += 1) {
+    if (!used.has(number)) {
+      return number;
+    }
+  }
+  return null;
+}
+
+function trimReferenceInputsTo(node, targetCount) {
+  if (typeof node.removeInput !== "function") {
+    return;
+  }
+  let entries = referenceInputs(node);
+  while (entries.length > targetCount) {
+    const last = entries[entries.length - 1];
+    if (!last || last.input.link != null) {
+      break;
+    }
+    node.removeInput(last.index);
+    entries = referenceInputs(node);
+  }
+}
+
+function ensureReferenceInputCount(node, targetCount) {
+  if (typeof node.addInput !== "function") {
+    return;
+  }
+  const target = Math.max(
+    DEFAULT_REFERENCE_INPUT_COUNT,
+    Math.min(MAX_REFERENCE_INPUT_COUNT, targetCount)
+  );
+  while (referenceInputs(node).length < target) {
+    const number = nextReferenceInputNumber(node);
+    if (number === null) {
+      break;
+    }
+    node.addInput(`${REFERENCE_INPUT_PREFIX}${number}`, "IMAGE");
+  }
+}
+
+function configureReferenceInputs(node, serializedNode) {
+  const savedInputs = serializedNode?.inputs;
+  if (Array.isArray(savedInputs)) {
+    const savedMax = savedInputs.reduce(
+      (maximum, input) => Math.max(maximum, referenceInputNumber(input) || 0),
+      0
+    );
+    const target = Math.max(DEFAULT_REFERENCE_INPUT_COUNT, savedMax);
+    ensureReferenceInputCount(node, target);
+    trimReferenceInputsTo(node, target);
+  } else if (!node._mengBaoReferenceInputsInitialized) {
+    trimReferenceInputsTo(node, DEFAULT_REFERENCE_INPUT_COUNT);
+  }
+  node._mengBaoReferenceInputsInitialized = true;
+}
+
+function addReferenceInput(node) {
+  const limit = referenceLimit(node);
+  if (referenceInputs(node).length >= limit || typeof node.addInput !== "function") {
+    return;
+  }
+  const number = nextReferenceInputNumber(node, limit);
+  if (number === null) {
+    return;
+  }
+  node.addInput(`${REFERENCE_INPUT_PREFIX}${number}`, "IMAGE");
+  const socket = referenceInputs(node).find((entry) => entry.number === number)?.input;
+  setSocketLabel(socket, TRANSLATIONS[node._mengBaoLanguage || currentLanguage()].inputs);
+  renderReferenceControls(node);
+  resizeNode(node);
+  node.setDirtyCanvas?.(true, true);
+  app.graph?.setDirtyCanvas(true, true);
+}
+
+function removeReferenceInput(node) {
+  const entries = referenceInputs(node);
+  if (entries.length <= DEFAULT_REFERENCE_INPUT_COUNT || typeof node.removeInput !== "function") {
+    return;
+  }
+  const last = entries[entries.length - 1];
+  if (!last) {
+    return;
+  }
+  node.removeInput(last.index);
+  renderReferenceControls(node);
+  resizeNode(node);
+  node.setDirtyCanvas?.(true, true);
+  app.graph?.setDirtyCanvas(true, true);
+}
+
+function syncReferenceInputsForModel(node) {
+  trimReferenceInputsTo(node, referenceLimit(node));
+  renderReferenceControls(node);
 }
 
 function rememberWidget(widget) {
@@ -264,6 +416,7 @@ function updateVisibility(node) {
   for (const name of ALWAYS_HIDDEN_WIDGETS) {
     setWidgetVisible(findWidget(node, name), false);
   }
+  syncReferenceInputsForModel(node);
   node._mengBaoVisibleModel = selectedModel;
   resizeNode(node);
 }
@@ -372,17 +525,21 @@ function formatBalance(payload) {
 
 function extractApiKey(node) {
   const connectionJson = String(findWidget(node, "connection_json")?.value || "").trim();
-  if (connectionJson.startsWith("{")) {
+  const apiKey = String(findWidget(node, "api_key")?.value || "").trim();
+  for (const candidate of [apiKey, connectionJson]) {
+    if (!candidate.startsWith("{")) {
+      continue;
+    }
     try {
-      const connection = JSON.parse(connectionJson);
+      const connection = JSON.parse(candidate);
       if (connection.key) {
         return String(connection.key).trim();
       }
     } catch {
-      // 后端会保留原始连接 JSON 的错误处理，这里继续尝试独立 API Key。
+      // 后端会保留原始值的错误处理，这里继续尝试下一个密钥来源。
     }
   }
-  return String(findWidget(node, "api_key")?.value || "").trim();
+  return apiKey || connectionJson;
 }
 
 function balanceErrorMessage(payload, response) {
@@ -392,6 +549,62 @@ function balanceErrorMessage(payload, response) {
       response?.statusText ||
       `HTTP ${response?.status || 500}`
   );
+}
+
+async function hasSavedApiKey(node) {
+  if (typeof node._mengBaoHasSavedApiKey === "boolean") {
+    return node._mengBaoHasSavedApiKey;
+  }
+  try {
+    const response = await api.fetchApi("/mengbao_image_api/api_key");
+    const payload = await response.json();
+    node._mengBaoHasSavedApiKey = Boolean(response.ok && payload?.saved);
+  } catch {
+    node._mengBaoHasSavedApiKey = false;
+  }
+  return node._mengBaoHasSavedApiKey;
+}
+
+async function saveApiKey(node) {
+  const language = normalizeLanguage(node._mengBaoLanguage || currentLanguage());
+  const labels = TRANSLATIONS[language].account;
+  if (!extractApiKey(node)) {
+    window.alert(labels.apiKeyRequired);
+    return;
+  }
+  if (node._mengBaoApiKeySaveState === "loading") {
+    return;
+  }
+
+  node._mengBaoApiKeySaveState = "loading";
+  renderAccountControls(node);
+  try {
+    const response = await api.fetchApi("/mengbao_image_api/api_key", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        connection_json: findWidget(node, "connection_json")?.value || "",
+        api_key: findWidget(node, "api_key")?.value || "",
+      }),
+    });
+    let payload;
+    try {
+      payload = await response.json();
+    } catch {
+      payload = { error: { message: await response.text() } };
+    }
+    if (!response.ok || payload?.error || !payload?.saved) {
+      throw new Error(balanceErrorMessage(payload, response));
+    }
+    node._mengBaoHasSavedApiKey = true;
+    node._mengBaoApiKeySaveState = "saved";
+    window.alert(labels.saved);
+    await refreshBalance(node);
+  } catch (error) {
+    node._mengBaoApiKeySaveState = "idle";
+    window.alert(error instanceof Error ? error.message : String(error));
+  }
+  renderAccountControls(node);
 }
 
 function renderAccountControls(node) {
@@ -405,6 +618,11 @@ function renderAccountControls(node) {
 
   controls.balanceLabel.textContent = labels.balance;
   controls.registerButton.textContent = labels.register;
+  controls.saveButton.textContent =
+    node._mengBaoApiKeySaveState === "loading" ? labels.saving : labels.save;
+  controls.saveButton.disabled = node._mengBaoApiKeySaveState === "loading";
+  controls.saveButton.style.opacity =
+    node._mengBaoApiKeySaveState === "loading" ? "0.65" : "1";
   controls.feedbackButton.textContent = labels.feedback;
   controls.refreshButton.textContent =
     state.kind === "loading" ? labels.refreshing : labels.refresh;
@@ -419,13 +637,15 @@ function renderAccountControls(node) {
   }
 }
 
-async function refreshBalance(node) {
+async function refreshBalance(node, { silent = false } = {}) {
   const language = normalizeLanguage(node._mengBaoLanguage || currentLanguage());
   const labels = TRANSLATIONS[language].account;
-  if (!extractApiKey(node)) {
+  if (!extractApiKey(node) && !(await hasSavedApiKey(node))) {
     node._mengBaoBalanceState = { kind: "error", value: labels.apiKeyRequired };
     renderAccountControls(node);
-    window.alert(labels.apiKeyRequired);
+    if (!silent) {
+      window.alert(labels.apiKeyRequired);
+    }
     return;
   }
   if (node._mengBaoBalanceState?.kind === "loading") {
@@ -456,7 +676,9 @@ async function refreshBalance(node) {
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     node._mengBaoBalanceState = { kind: "error", value: message };
-    window.alert(message);
+    if (!silent) {
+      window.alert(message);
+    }
   }
   renderAccountControls(node);
   resizeNode(node);
@@ -483,6 +705,84 @@ function createActionButton(label, onClick) {
   button.textContent = label;
   button.addEventListener("click", onClick);
   return button;
+}
+
+function renderReferenceControls(node) {
+  const controls = node._mengBaoReferenceControls;
+  if (!controls) {
+    return;
+  }
+  const language = normalizeLanguage(node._mengBaoLanguage || currentLanguage());
+  const labels = TRANSLATIONS[language].references;
+  const count = referenceInputs(node).length;
+  const limit = referenceLimit(node);
+  const nextNumber = nextReferenceInputNumber(node, limit);
+
+  if (count > limit) {
+    controls.addButton.textContent = `${labels.overLimit} (${count}/${limit})`;
+  } else if (count >= limit || nextNumber === null) {
+    controls.addButton.textContent = `${labels.limit} (${count}/${limit})`;
+  } else {
+    controls.addButton.textContent = `${labels.add} ${nextNumber} (${count}/${limit})`;
+  }
+
+  const disabled = count >= limit || nextNumber === null;
+  controls.addButton.disabled = disabled;
+  controls.addButton.style.cursor = disabled ? "not-allowed" : "pointer";
+  controls.addButton.style.opacity = disabled ? "0.65" : "1";
+
+  const lastNumber = referenceInputs(node).at(-1)?.number;
+  const removeDisabled = count <= DEFAULT_REFERENCE_INPUT_COUNT;
+  controls.removeButton.textContent = removeDisabled
+    ? `${labels.remove} (${labels.minimum})`
+    : `${labels.remove} ${lastNumber} (${count}/${limit})`;
+  controls.removeButton.disabled = removeDisabled;
+  controls.removeButton.style.cursor = removeDisabled ? "not-allowed" : "pointer";
+  controls.removeButton.style.opacity = removeDisabled ? "0.65" : "1";
+}
+
+function ensureReferenceControls(node) {
+  if (
+    node._mengBaoReferenceControls ||
+    typeof document === "undefined" ||
+    typeof node.addDOMWidget !== "function"
+  ) {
+    return;
+  }
+
+  const root = styleElement(document.createElement("div"), {
+    boxSizing: "border-box",
+    display: "flex",
+    gap: "8px",
+    width: "100%",
+    minHeight: "32px",
+    padding: "2px 0",
+  });
+  const addButton = createActionButton("", () => addReferenceInput(node));
+  const removeButton = createActionButton("", () => removeReferenceInput(node));
+  root.append(addButton, removeButton);
+
+  const widget = node.addDOMWidget(
+    "mengbao_reference_controls",
+    "mengbao-reference-controls",
+    root,
+    {
+      serialize: false,
+      hideOnZoom: false,
+      getMinHeight: () => 34,
+      getMaxHeight: () => 34,
+    }
+  );
+  if (Array.isArray(node.widgets)) {
+    const widgetIndex = node.widgets.indexOf(widget);
+    if (widgetIndex > 0) {
+      node.widgets.splice(widgetIndex, 1);
+      node.widgets.unshift(widget);
+    }
+  }
+
+  node._mengBaoReferenceControls = { addButton, removeButton, widget };
+  renderReferenceControls(node);
 }
 
 function ensureAccountControls(node) {
@@ -533,9 +833,10 @@ function ensureAccountControls(node) {
     width: "100%",
   });
   const registerButton = createActionButton(labels.register, openRegistration);
+  const saveButton = createActionButton(labels.save, () => saveApiKey(node));
   const refreshButton = createActionButton(labels.refresh, () => refreshBalance(node));
   const feedbackButton = createActionButton(labels.feedback, showFeedback);
-  buttonRow.append(registerButton, refreshButton, feedbackButton);
+  buttonRow.append(registerButton, saveButton, refreshButton, feedbackButton);
   root.append(balanceRow, buttonRow);
 
   node.addDOMWidget("mengbao_account", "mengbao-account", root, {
@@ -548,11 +849,30 @@ function ensureAccountControls(node) {
     balanceLabel,
     balanceValue,
     registerButton,
+    saveButton,
     refreshButton,
     feedbackButton,
   };
+  node._mengBaoApiKeySaveState ||= "idle";
   node._mengBaoBalanceState ||= { kind: "empty", value: "" };
   renderAccountControls(node);
+}
+
+function scheduleInitialBalanceRefresh(node) {
+  if (node._mengBaoInitialBalanceRefreshed) {
+    return;
+  }
+  if (node._mengBaoInitialBalanceTimer) {
+    clearTimeout(node._mengBaoInitialBalanceTimer);
+  }
+  node._mengBaoInitialBalanceTimer = setTimeout(async () => {
+    node._mengBaoInitialBalanceTimer = null;
+    const canRefresh = Boolean(extractApiKey(node)) || (await hasSavedApiKey(node));
+    node._mengBaoInitialBalanceRefreshed = true;
+    if (canRefresh) {
+      await refreshBalance(node, { silent: true });
+    }
+  }, 100);
 }
 
 function applyLocalization(node, requestedLanguage = currentLanguage()) {
@@ -654,6 +974,7 @@ function linkAutoPair(node, aspectName, resolutionName) {
 function configureNode(node, serializedNode) {
   node._mengBaoNode = true;
   migrateLegacyWorkflow(node, serializedNode);
+  configureReferenceInputs(node, serializedNode);
 
   const legacySize = findWidget(node, "tt2_size");
   if (
@@ -668,7 +989,9 @@ function configureNode(node, serializedNode) {
     if (legacySize.value === "自动") legacySize.value = "auto";
   }
 
+  ensureReferenceControls(node);
   ensureAccountControls(node);
+  scheduleInitialBalanceRefresh(node);
   wrapCallback(node, findWidget(node, "model_type"));
   wrapCallback(node, findWidget(node, "tt2_background"));
   wrapCallback(node, findWidget(node, "tt25_background"));
@@ -710,10 +1033,25 @@ function installLocaleListener() {
   };
 }
 
+function installExecutionBalanceListener() {
+  if (typeof api.addEventListener !== "function" || api._mengBaoBalanceListenerInstalled) {
+    return;
+  }
+  api._mengBaoBalanceListenerInstalled = true;
+  api.addEventListener("executed", ({ detail }) => {
+    const nodeId = String(detail?.node ?? "").split(":")[0];
+    const node = app.graph?.getNodeById?.(nodeId);
+    if (isMengBaoNode(node)) {
+      refreshBalance(node, { silent: true });
+    }
+  });
+}
+
 app.registerExtension({
   name: "MengBao.image_api_nodes.localization.v4",
   async setup() {
     installLocaleListener();
+    installExecutionBalanceListener();
     setTimeout(localizeExistingNodes, 0);
   },
   async beforeRegisterNodeDef(nodeType, nodeData) {

@@ -4,7 +4,8 @@ import io
 import json
 import re
 import time
-from typing import Any, Dict, Iterable, List, Optional, Tuple
+from pathlib import Path
+from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple
 
 import numpy as np
 import requests
@@ -18,6 +19,11 @@ except ImportError:
     web = None
     PromptServer = None
 
+try:
+    from comfy.utils import ProgressBar as ComfyProgressBar
+except ImportError:
+    ComfyProgressBar = None
+
 
 MODEL_CONFIGS = {
     "gpt-image-2": {"api_model": "tt-image-2", "family": "tt-image-2", "max_images": 14},
@@ -26,6 +32,14 @@ MODEL_CONFIGS = {
     "nano-banana-2-pro": {"api_model": "banana-pro", "family": "banana-pro", "max_images": 14},
 }
 MODEL_TYPES = list(MODEL_CONFIGS.keys())
+DEFAULT_REFERENCE_IMAGE_COUNT = 3
+NAMED_REFERENCE_IMAGE_COUNT = 5
+MAX_REFERENCE_IMAGE_COUNT = max(
+    int(config["max_images"]) for config in MODEL_CONFIGS.values()
+)
+PLUGIN_DIRECTORY = Path(__file__).resolve().parent
+ENV_PATH = PLUGIN_DIRECTORY / ".env"
+ENV_API_KEY_NAME = "MENGBAO_API_KEY"
 
 FIXED_API_BASE = "https://api.lk888.ai"
 BALANCE_URL = f"{FIXED_API_BASE}/api/v1/skills/balance"
@@ -126,8 +140,8 @@ def _normalize_ui_language(value: str) -> str:
 
 def _message_image_title(ui_language: str) -> str:
     if _normalize_ui_language(ui_language) == "zh":
-        return "萌宝图像 API 未收到图片"
-    return "MengBao-Image-API did not receive an image"
+        return "萌宝AI·图像生成未收到图片"
+    return "MengBao AI · Image Generation did not receive an image"
 
 
 def _augment_prompt_for_transparency(
@@ -163,15 +177,70 @@ BANANA_PRO_ASPECT_RATIOS = [
 ]
 
 
+def _json_connection_key(value: str) -> str:
+    value = (value or "").strip()
+    if not value.startswith("{"):
+        return ""
+    try:
+        data = json.loads(value)
+    except json.JSONDecodeError:
+        return ""
+    if not isinstance(data, dict):
+        return ""
+    return str(data.get("key") or "").strip()
+
+
+def _provided_connection_key(connection_json: str, api_key: str) -> str:
+    # 旧工作流仍可通过 connection_json 提供密钥；新界面统一使用 API 密钥输入框。
+    api_key = (api_key or "").strip()
+    if api_key:
+        return _json_connection_key(api_key) or api_key
+    return _json_connection_key(connection_json)
+
+
+def _read_saved_api_key() -> str:
+    if not ENV_PATH.is_file():
+        return ""
+    try:
+        for raw_line in ENV_PATH.read_text(encoding="utf-8").splitlines():
+            line = raw_line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            name, value = line.split("=", 1)
+            if name.strip() == ENV_API_KEY_NAME:
+                return value.strip().strip('"').strip("'")
+    except OSError:
+        return ""
+    return ""
+
+
+def _save_api_key(api_key: str) -> None:
+    api_key = str(api_key or "").strip()
+    if not api_key:
+        raise ValueError("api_key is empty")
+    if "\n" in api_key or "\r" in api_key:
+        raise ValueError("api_key contains an invalid newline")
+
+    lines: List[str] = []
+    if ENV_PATH.is_file():
+        lines = ENV_PATH.read_text(encoding="utf-8").splitlines()
+    replacement = f"{ENV_API_KEY_NAME}={api_key}"
+    replaced = False
+    for index, line in enumerate(lines):
+        if line.partition("=")[0].strip() == ENV_API_KEY_NAME:
+            lines[index] = replacement
+            replaced = True
+            break
+    if not replaced:
+        lines.append(replacement)
+
+    temporary_path = ENV_PATH.with_name(f"{ENV_PATH.name}.tmp")
+    temporary_path.write_text("\n".join(lines).rstrip() + "\n", encoding="utf-8")
+    temporary_path.replace(ENV_PATH)
+
+
 def _connection_key(connection_json: str, api_key: str) -> str:
-    connection_json = (connection_json or "").strip()
-    if connection_json.startswith("{"):
-        try:
-            data = json.loads(connection_json)
-            return str(data.get("key") or api_key or "").strip()
-        except json.JSONDecodeError:
-            pass
-    return (api_key or "").strip()
+    return _provided_connection_key(connection_json, api_key) or _read_saved_api_key()
 
 
 def _mask_key(value: str) -> str:
@@ -418,6 +487,31 @@ def _extract_task_id(payload: Any) -> Any:
     return payload.get("task_id")
 
 
+def _task_progress_percent(payload: Any) -> Optional[int]:
+    if not isinstance(payload, dict):
+        return None
+    value = payload.get("progress")
+    if value is None and isinstance(payload.get("data"), dict):
+        value = payload["data"].get("progress")
+    if value is None or isinstance(value, bool):
+        return None
+
+    try:
+        if isinstance(value, str):
+            cleaned = value.strip().rstrip("%").strip()
+            if not cleaned:
+                return None
+            number = float(cleaned)
+        else:
+            number = float(value)
+    except (TypeError, ValueError):
+        return None
+
+    if 0.0 <= number <= 1.0 and not isinstance(value, str):
+        number *= 100.0
+    return max(0, min(100, int(round(number))))
+
+
 def _call_media_api(
     api_key: str,
     model_type: str,
@@ -426,6 +520,7 @@ def _call_media_api(
     reference_images: List[bytes],
     timeout: int,
     retries: int,
+    progress_callback: Optional[Callable[[int], None]] = None,
 ) -> Dict[str, Any]:
     config = MODEL_CONFIGS[model_type]
     api_model = config["api_model"]
@@ -453,6 +548,8 @@ def _call_media_api(
     task_id = _extract_task_id(create_payload)
     if task_id is None:
         return _task_error("Create response did not contain task_id", None, create_payload)
+    if progress_callback is not None:
+        progress_callback(2)
 
     status_url = f"{FIXED_API_BASE}{MEDIA_STATUS_PATH}"
     deadline = time.monotonic() + timeout
@@ -473,6 +570,9 @@ def _call_media_api(
             )
 
         latest_payload = _response_body(status_response)
+        progress = _task_progress_percent(latest_payload)
+        if progress is not None and progress_callback is not None:
+            progress_callback(progress)
         if isinstance(latest_payload, dict) and latest_payload.get("is_final") is True:
             if latest_payload.get("state") == "success":
                 latest_payload.setdefault("request", request_info)
@@ -569,13 +669,13 @@ class MengBaoImageAPI:
                 "model_type": (MODEL_TYPES, {"default": "gpt-image-2"}),
                 "batch_size": ("INT", {"default": 1, "min": 1, "max": 10, "step": 1}),
                 "tt2_size": (list(TT_IMAGE_2_SIZES.keys()), {"default": "auto"}),
-                "tt2_aspect_ratio": (TT_IMAGE_2_ASPECT_RATIOS, {"default": "1:1"}),
-                "tt2_resolution": (TT_IMAGE_2_RESOLUTIONS, {"default": "1K"}),
+                "tt2_aspect_ratio": (TT_IMAGE_2_ASPECT_RATIOS, {"default": "auto"}),
+                "tt2_resolution": (TT_IMAGE_2_RESOLUTIONS, {"default": "auto"}),
                 "tt2_background": (["opaque", "transparent", "auto"], {"default": "opaque"}),
                 "tt2_quality": (["auto", "high", "medium", "low"], {"default": "auto"}),
                 "tt25_version": (["flare", "sunburst"], {"default": "flare"}),
-                "tt25_aspect_ratio": (TT_IMAGE_25_ASPECT_RATIOS, {"default": "1:1"}),
-                "tt25_resolution": (["auto", "1K", "2K", "4K"], {"default": "1K"}),
+                "tt25_aspect_ratio": (TT_IMAGE_25_ASPECT_RATIOS, {"default": "auto"}),
+                "tt25_resolution": (["auto", "1K", "2K", "4K"], {"default": "auto"}),
                 "tt25_quality": (["auto", "low", "medium", "high", "xhigh", "max"], {"default": "auto"}),
                 "tt25_background": (["opaque", "transparent", "auto"], {"default": "opaque"}),
                 "banana2_aspect_ratio": (BANANA_2_ASPECT_RATIOS, {"default": "1:1"}),
@@ -583,24 +683,33 @@ class MengBaoImageAPI:
                 "banana2_thinking_level": (["minimal", "high"], {"default": "minimal"}),
                 "banana_pro_aspect_ratio": (BANANA_PRO_ASPECT_RATIOS, {"default": "1:1"}),
                 "banana_pro_image_size": (["1K", "2K", "4K"], {"default": "1K"}),
-                "timeout": ("INT", {"default": 300, "min": 30, "max": 1800, "step": 10}),
+                "timeout": ("INT", {"default": 600, "min": 30, "max": 1800, "step": 10}),
                 "retries": ("INT", {"default": 2, "min": 0, "max": 5, "step": 1}),
                 "ui_language": (["en", "zh"], {"default": "en"}),
             },
             "optional": {
-                "image_1": ("IMAGE",),
-                "image_2": ("IMAGE",),
-                "image_3": ("IMAGE",),
-                "image_4": ("IMAGE",),
-                "image_5": ("IMAGE",),
+                f"image_{index}": ("IMAGE",)
+                for index in range(1, MAX_REFERENCE_IMAGE_COUNT + 1)
             },
         }
 
     RETURN_TYPES = ("IMAGE", "STRING", "STRING")
     RETURN_NAMES = ("images", "text", "failed_urls")
     FUNCTION = "generate"
-    CATEGORY = "MengBao/Image API"
-    DESCRIPTION = "MengBao-Image-API：TT Image 与 Nano Banana 图片生成节点。"
+    CATEGORY = "萌宝AI/图像生成"
+    DESCRIPTION = "萌宝AI 图像生成节点：使用 TT Image 与 Nano Banana 模型生成和编辑图像。"
+    SEARCH_ALIASES = [
+        "MengBao",
+        "MengBao Image API",
+        "MengBao-Image-API",
+        "MengBao AI Image Generation",
+        "萌宝",
+        "萌宝AI",
+        "萌宝AI 图像生成",
+        "萌宝AI·图像生成",
+        "萌宝图像",
+        "萌宝图像 API",
+    ]
 
     def generate(
         self,
@@ -632,6 +741,7 @@ class MengBaoImageAPI:
         image_3: Optional[torch.Tensor] = None,
         image_4: Optional[torch.Tensor] = None,
         image_5: Optional[torch.Tensor] = None,
+        **additional_images: Optional[torch.Tensor],
     ):
         api_key = _connection_key(connection_json, api_key)
         if not api_key:
@@ -640,8 +750,16 @@ class MengBaoImageAPI:
             raise ValueError(f"Unsupported model_type: {model_type}")
 
         config = MODEL_CONFIGS[model_type]
+        image_inputs = [image_1, image_2, image_3, image_4, image_5]
+        image_inputs.extend(
+            additional_images.get(f"image_{index}")
+            for index in range(
+                NAMED_REFERENCE_IMAGE_COUNT + 1,
+                MAX_REFERENCE_IMAGE_COUNT + 1,
+            )
+        )
         reference_images = _optional_images(
-            [image_1, image_2, image_3, image_4, image_5],
+            image_inputs,
             limit=int(config["max_images"]),
         )
         model_params = _build_model_params(
@@ -673,7 +791,17 @@ class MengBaoImageAPI:
         all_images: List[torch.Tensor] = []
         payloads: List[Dict[str, Any]] = []
         failed_urls: List[str] = []
-        for _ in range(int(batch_size)):
+        batch_count = int(batch_size)
+        progress_total = max(1, batch_count) * 100
+        progress_bar = ComfyProgressBar(progress_total) if ComfyProgressBar is not None else None
+        for batch_index in range(batch_count):
+            def update_batch_progress(percent: int) -> None:
+                if progress_bar is None:
+                    return
+                absolute = batch_index * 100 + max(0, min(100, int(percent)))
+                progress_bar.update_absolute(absolute, progress_total)
+
+            update_batch_progress(1)
             try:
                 payload = _call_media_api(
                     api_key=api_key,
@@ -683,6 +811,7 @@ class MengBaoImageAPI:
                     reference_images=reference_images,
                     timeout=int(timeout),
                     retries=int(retries),
+                    progress_callback=update_batch_progress,
                 )
             except Exception as exc:
                 payload = {
@@ -701,14 +830,18 @@ class MengBaoImageAPI:
             all_images.extend(images)
             failed_urls.extend(failed)
             if not images:
-                print(f"[MengBao-Image-API] No image returned. {_json_text(payload)}")
+                print(f"[MengBao AI] No image returned. {_json_text(payload)}")
+            update_batch_progress(100)
 
         text = "\n\n".join(_json_text(payload) for payload in payloads)
-        return (
-            _cat_images(all_images, text, _normalize_ui_language(ui_language)),
-            text,
-            "\n".join(failed_urls),
-        )
+        return {
+            "ui": {"mengbao_balance_refresh": [True]},
+            "result": (
+                _cat_images(all_images, text, _normalize_ui_language(ui_language)),
+                text,
+                "\n".join(failed_urls),
+            ),
+        }
 
 
 if (
@@ -716,6 +849,31 @@ if (
     and web is not None
     and getattr(PromptServer, "instance", None) is not None
 ):
+    @PromptServer.instance.routes.get("/mengbao_image_api/api_key")
+    async def mengbao_image_api_key_status(_request):
+        return web.json_response({"saved": bool(_read_saved_api_key())})
+
+    @PromptServer.instance.routes.post("/mengbao_image_api/api_key")
+    async def mengbao_image_api_save_key(request):
+        try:
+            body = await request.json()
+            api_key = _provided_connection_key(
+                str(body.get("connection_json") or ""),
+                str(body.get("api_key") or ""),
+            )
+            await asyncio.to_thread(_save_api_key, api_key)
+            return web.json_response({"saved": True})
+        except Exception as exc:
+            return web.json_response(
+                {
+                    "error": {
+                        "type": exc.__class__.__name__,
+                        "message": str(exc),
+                    }
+                },
+                status=400 if isinstance(exc, ValueError) else 500,
+            )
+
     @PromptServer.instance.routes.post("/mengbao_image_api/balance")
     async def mengbao_image_api_balance(request):
         try:
@@ -741,12 +899,3 @@ if (
                 },
                 status=400 if isinstance(exc, ValueError) else 500,
             )
-
-
-NODE_CLASS_MAPPINGS = {
-    "WANGImageAPI": MengBaoImageAPI,
-}
-
-NODE_DISPLAY_NAME_MAPPINGS = {
-    "WANGImageAPI": "MengBao-Image-API",
-}

@@ -2,6 +2,8 @@ import base64
 import importlib.util
 import io
 import json
+import sys
+import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -10,11 +12,27 @@ from PIL import Image
 
 
 MODULE_PATH = Path(__file__).resolve().parents[1] / "MengBao_image_api_nodes.py"
+PLUGIN_ROOT = MODULE_PATH.parent
 MODULE_SPEC = importlib.util.spec_from_file_location("mengbao_image_api_nodes", MODULE_PATH)
 if MODULE_SPEC is None or MODULE_SPEC.loader is None:
     raise ImportError(f"Cannot load MengBao image API module from {MODULE_PATH}")
 node_module = importlib.util.module_from_spec(MODULE_SPEC)
 MODULE_SPEC.loader.exec_module(node_module)
+
+
+def load_node_pack():
+    package_name = "mengbao_node_pack_test"
+    package_spec = importlib.util.spec_from_file_location(
+        package_name,
+        PLUGIN_ROOT / "__init__.py",
+        submodule_search_locations=[str(PLUGIN_ROOT)],
+    )
+    if package_spec is None or package_spec.loader is None:
+        raise ImportError(f"Cannot load MengBao node pack from {PLUGIN_ROOT}")
+    package = importlib.util.module_from_spec(package_spec)
+    sys.modules[package_name] = package
+    package_spec.loader.exec_module(package)
+    return package
 
 
 class FakeResponse:
@@ -38,6 +56,33 @@ class FakeResponse:
 
 
 class MengBaoImageAPITests(unittest.TestCase):
+    def test_node_pack_centralizes_mappings_and_keeps_legacy_id(self):
+        node_pack = load_node_pack()
+        self.assertEqual(set(node_pack.NODE_CLASS_MAPPINGS), {"WANGImageAPI"})
+        self.assertEqual(
+            node_pack.NODE_DISPLAY_NAME_MAPPINGS,
+            {"WANGImageAPI": "萌宝AI·图像生成"},
+        )
+        self.assertEqual(
+            set(node_pack.NODE_CLASS_MAPPINGS),
+            set(node_pack.NODE_DISPLAY_NAME_MAPPINGS),
+        )
+        self.assertEqual(node_pack.WEB_DIRECTORY, "./web")
+        for node_class in node_pack.NODE_CLASS_MAPPINGS.values():
+            self.assertTrue(node_class.CATEGORY.startswith("萌宝AI/"))
+
+    def test_connection_key_accepts_json_in_visible_api_key_field(self):
+        connection = '{"_type":"newapi_channel_conn","key":"json-key"}'
+        self.assertEqual(node_module._provided_connection_key("", connection), "json-key")
+        self.assertEqual(
+            node_module._provided_connection_key('{"key":"legacy-key"}', connection),
+            "json-key",
+        )
+        self.assertEqual(
+            node_module._provided_connection_key('{"key":"legacy-key"}', ""),
+            "legacy-key",
+        )
+
     def test_balance_request_uses_bearer_authentication(self):
         response = FakeResponse({"data": {"balance": 18.75}})
         with patch.object(node_module.requests, "get", return_value=response) as get_mock:
@@ -59,12 +104,25 @@ class MengBaoImageAPITests(unittest.TestCase):
 
         for model_type in ("gpt-image-2", "gpt-image-2.5"):
             with self.subTest(model_type=model_type):
+                progress_updates = []
+
+                class FakeProgressBar:
+                    def __init__(self, total):
+                        self.total = total
+
+                    def update_absolute(self, value, total):
+                        progress_updates.append((value, total))
+
                 with patch.object(
                     node_module,
                     "_call_media_api",
                     return_value={"data": [{"b64_json": encoded}]},
-                ) as api_mock:
-                    node_module.MengBaoImageAPI().generate(
+                ) as api_mock, patch.object(
+                    node_module,
+                    "ComfyProgressBar",
+                    FakeProgressBar,
+                ):
+                    result = node_module.MengBaoImageAPI().generate(
                         prompt="产品摄影",
                         connection_json="",
                         api_key="test-key",
@@ -92,6 +150,9 @@ class MengBaoImageAPITests(unittest.TestCase):
 
                 sent_prompt = api_mock.call_args.kwargs["prompt"]
                 sent_params = api_mock.call_args.kwargs["params"]
+                self.assertEqual(result["ui"], {"mengbao_balance_refresh": [True]})
+                self.assertEqual(len(result["result"]), 3)
+                self.assertEqual(progress_updates, [(1, 100), (100, 100)])
                 self.assertEqual(sent_prompt.count(transparent_instruction), 1)
                 self.assertTrue(sent_prompt.startswith("产品摄影"))
                 if model_type == "gpt-image-2.5":
@@ -99,10 +160,116 @@ class MengBaoImageAPITests(unittest.TestCase):
                 else:
                     self.assertNotIn("background", sent_params)
 
+    def test_reference_inputs_expand_to_each_model_limit(self):
+        self.assertEqual(node_module.DEFAULT_REFERENCE_IMAGE_COUNT, 3)
+        optional_inputs = node_module.MengBaoImageAPI.INPUT_TYPES()["optional"]
+        self.assertEqual(
+            list(optional_inputs),
+            [f"image_{index}" for index in range(1, 17)],
+        )
+
+        encoded = base64.b64encode(self._png_bytes()).decode("ascii")
+        reference = node_module.torch.zeros((1, 1, 1, 3), dtype=node_module.torch.float32)
+        reference_inputs = {f"image_{index}": reference for index in range(1, 17)}
+        expected_limits = {
+            "gpt-image-2": 14,
+            "gpt-image-2.5": 16,
+            "nano-banana-2": 14,
+            "nano-banana-2-pro": 14,
+        }
+
+        for model_type, expected_limit in expected_limits.items():
+            with self.subTest(model_type=model_type):
+                with patch.object(
+                    node_module,
+                    "_call_media_api",
+                    return_value={"data": [{"b64_json": encoded}]},
+                ) as api_mock, patch.object(
+                    node_module,
+                    "_image_tensor_to_png_bytes",
+                    return_value=b"reference",
+                ) as encode_mock:
+                    node_module.MengBaoImageAPI().generate(
+                        prompt="产品摄影",
+                        connection_json="",
+                        api_key="test-key",
+                        model_type=model_type,
+                        batch_size=1,
+                        tt2_size="auto",
+                        tt2_aspect_ratio="1:1",
+                        tt2_resolution="1K",
+                        tt2_background="opaque",
+                        tt2_quality="auto",
+                        tt25_version="flare",
+                        tt25_aspect_ratio="1:1",
+                        tt25_resolution="1K",
+                        tt25_quality="auto",
+                        tt25_background="opaque",
+                        banana2_aspect_ratio="1:1",
+                        banana2_image_size="1K",
+                        banana2_thinking_level="minimal",
+                        banana_pro_aspect_ratio="1:1",
+                        banana_pro_image_size="1K",
+                        timeout=30,
+                        retries=0,
+                        ui_language="zh",
+                        **reference_inputs,
+                    )
+
+                self.assertEqual(encode_mock.call_count, expected_limit)
+                self.assertEqual(
+                    len(api_mock.call_args.kwargs["reference_images"]),
+                    expected_limit,
+                )
+
+    def test_reference_inputs_after_default_count_are_not_duplicated(self):
+        encoded = base64.b64encode(self._png_bytes()).decode("ascii")
+        reference = node_module.torch.zeros((1, 1, 1, 3), dtype=node_module.torch.float32)
+
+        with patch.object(
+            node_module,
+            "_call_media_api",
+            return_value={"data": [{"b64_json": encoded}]},
+        ) as api_mock, patch.object(
+            node_module,
+            "_image_tensor_to_png_bytes",
+            return_value=b"reference",
+        ) as encode_mock:
+            node_module.MengBaoImageAPI().generate(
+                prompt="产品摄影",
+                connection_json="",
+                api_key="test-key",
+                model_type="gpt-image-2.5",
+                batch_size=1,
+                tt2_size="auto",
+                tt2_aspect_ratio="auto",
+                tt2_resolution="auto",
+                tt2_background="opaque",
+                tt2_quality="auto",
+                tt25_version="flare",
+                tt25_aspect_ratio="auto",
+                tt25_resolution="auto",
+                tt25_quality="auto",
+                tt25_background="opaque",
+                banana2_aspect_ratio="1:1",
+                banana2_image_size="1K",
+                banana2_thinking_level="minimal",
+                banana_pro_aspect_ratio="1:1",
+                banana_pro_image_size="1K",
+                timeout=30,
+                retries=0,
+                ui_language="zh",
+                image_4=reference,
+                image_6=reference,
+            )
+
+        self.assertEqual(encode_mock.call_count, 2)
+        self.assertEqual(len(api_mock.call_args.kwargs["reference_images"]), 2)
+
     def test_tt_image_2_combines_aspect_ratio_and_resolution(self):
         inputs = node_module.MengBaoImageAPI.INPUT_TYPES()["required"]
-        self.assertEqual(inputs["tt2_aspect_ratio"][1]["default"], "1:1")
-        self.assertEqual(inputs["tt2_resolution"][1]["default"], "1K")
+        self.assertEqual(inputs["tt2_aspect_ratio"][1]["default"], "auto")
+        self.assertEqual(inputs["tt2_resolution"][1]["default"], "auto")
         self.assertEqual(inputs["tt2_background"][1]["default"], "opaque")
 
         params = node_module._build_model_params(
@@ -133,11 +300,11 @@ class MengBaoImageAPITests(unittest.TestCase):
 
         expected = {
             "en": {
-                "display_name": "MengBao-Image-API",
+                "display_name": "MengBao AI · Image Generation",
                 "outputs": ["Images", "Response", "Failed URLs"],
             },
             "zh": {
-                "display_name": "萌宝图像 API",
+                "display_name": "萌宝AI·图像生成",
                 "outputs": ["图像", "响应文本", "失败 URL"],
             },
         }
@@ -161,11 +328,11 @@ class MengBaoImageAPITests(unittest.TestCase):
         self.assertEqual(node_module._normalize_ui_language("fr"), "en")
         self.assertEqual(
             node_module._message_image_title("zh"),
-            "萌宝图像 API 未收到图片",
+            "萌宝AI·图像生成未收到图片",
         )
         self.assertEqual(
             node_module._message_image_title("en"),
-            "MengBao-Image-API did not receive an image",
+            "MengBao AI · Image Generation did not receive an image",
         )
 
     def test_tt_image_2_uses_canonical_auto_and_accepts_legacy_label(self):
@@ -191,6 +358,15 @@ class MengBaoImageAPITests(unittest.TestCase):
 
     def test_frontend_models_map_to_documented_api_models(self):
         self.assertEqual(
+            node_module.MODEL_TYPES,
+            [
+                "gpt-image-2",
+                "gpt-image-2.5",
+                "nano-banana-2",
+                "nano-banana-2-pro",
+            ],
+        )
+        self.assertEqual(
             {name: config["api_model"] for name, config in node_module.MODEL_CONFIGS.items()},
             {
                 "gpt-image-2": "tt-image-2",
@@ -199,6 +375,41 @@ class MengBaoImageAPITests(unittest.TestCase):
                 "nano-banana-2-pro": "banana-pro",
             },
         )
+
+        inputs = node_module.MengBaoImageAPI.INPUT_TYPES()["required"]
+        self.assertEqual(inputs["model_type"][1]["default"], "gpt-image-2")
+        self.assertEqual(inputs["tt25_aspect_ratio"][1]["default"], "auto")
+        self.assertEqual(inputs["tt25_resolution"][1]["default"], "auto")
+        self.assertEqual(inputs["timeout"][1]["default"], 600)
+
+    def test_node_search_aliases_include_current_brand_name(self):
+        aliases = node_module.MengBaoImageAPI.SEARCH_ALIASES
+        self.assertIn("MengBao", aliases)
+        self.assertIn("MengBao-Image-API", aliases)
+        self.assertIn("萌宝图像 API", aliases)
+
+    def test_saved_api_key_uses_local_env_without_exposing_it(self):
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            env_path = Path(temporary_directory) / ".env"
+            env_path.write_text("OTHER_SETTING=keep\n", encoding="utf-8")
+            with patch.object(node_module, "ENV_PATH", env_path):
+                node_module._save_api_key("test-secret-key")
+                self.assertEqual(node_module._read_saved_api_key(), "test-secret-key")
+                self.assertEqual(node_module._connection_key("", ""), "test-secret-key")
+
+            env_text = env_path.read_text(encoding="utf-8")
+            self.assertIn("OTHER_SETTING=keep", env_text)
+            self.assertIn("MENGBAO_API_KEY=test-secret-key", env_text)
+
+    def test_task_progress_formats_are_normalized(self):
+        self.assertEqual(node_module._task_progress_percent({"progress": "45%"}), 45)
+        self.assertEqual(node_module._task_progress_percent({"progress": 45}), 45)
+        self.assertEqual(node_module._task_progress_percent({"progress": 0.45}), 45)
+        self.assertEqual(
+            node_module._task_progress_percent({"data": {"progress": "101%"}}),
+            100,
+        )
+        self.assertIsNone(node_module._task_progress_percent({"progress": "pending"}))
 
     def test_tt_image_25_auto_values_are_linked(self):
         params = node_module._build_model_params(
@@ -249,12 +460,14 @@ class MengBaoImageAPITests(unittest.TestCase):
                 "task_id": "task-123",
                 "state": "success",
                 "is_final": True,
+                "progress": "100%",
                 "result_url": "https://cdn.example.com/output.png",
             }
         )
         image_bytes = self._png_bytes()
         downloaded = FakeResponse({}, content=image_bytes)
 
+        progress_updates = []
         with patch.object(node_module.requests, "post", return_value=created) as post_mock:
             with patch.object(node_module.requests, "get", side_effect=[completed, downloaded]):
                 payload = node_module._call_media_api(
@@ -265,6 +478,7 @@ class MengBaoImageAPITests(unittest.TestCase):
                     reference_images=[image_bytes],
                     timeout=30,
                     retries=0,
+                    progress_callback=progress_updates.append,
                 )
                 images, failed_urls = node_module._extract_images(payload, timeout=30, retries=0)
 
@@ -272,6 +486,7 @@ class MengBaoImageAPITests(unittest.TestCase):
         self.assertEqual(sent_payload["model"], "banana-pro")
         self.assertTrue(sent_payload["params"]["images"][0].startswith("data:image/png;base64,"))
         self.assertEqual(payload["state"], "success")
+        self.assertEqual(progress_updates, [2, 100])
         self.assertEqual(tuple(images[0].shape), (1, 2, 3, 3))
         self.assertEqual(failed_urls, [])
 

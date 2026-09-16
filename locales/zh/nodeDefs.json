@@ -1,11 +1,11 @@
 {
   "WANGImageAPI": {
-    "display_name": "萌宝图像 API",
-    "description": "使用 TT Image 与 Nano Banana 模型生成和编辑图像。",
+    "display_name": "萌宝AI·图像生成",
+    "description": "萌宝AI 节点包中的图像生成节点，使用 TT Image 与 Nano Banana 模型生成和编辑图像。",
     "inputs": {
       "prompt": { "name": "提示词" },
       "connection_json": { "name": "连接 JSON" },
-      "api_key": { "name": "API 密钥" },
+      "api_key": { "name": "API 密钥 / 连接 JSON" },
       "model_type": { "name": "模型" },
       "batch_size": { "name": "生成数量" },
       "tt2_size": { "name": "旧版尺寸" },
@@ -30,7 +30,18 @@
       "image_2": { "name": "参考图 2" },
       "image_3": { "name": "参考图 3" },
       "image_4": { "name": "参考图 4" },
-      "image_5": { "name": "参考图 5" }
+      "image_5": { "name": "参考图 5" },
+      "image_6": { "name": "参考图 6" },
+      "image_7": { "name": "参考图 7" },
+      "image_8": { "name": "参考图 8" },
+      "image_9": { "name": "参考图 9" },
+      "image_10": { "name": "参考图 10" },
+      "image_11": { "name": "参考图 11" },
+      "image_12": { "name": "参考图 12" },
+      "image_13": { "name": "参考图 13" },
+      "image_14": { "name": "参考图 14" },
+      "image_15": { "name": "参考图 15" },
+      "image_16": { "name": "参考图 16" }
     },
     "outputs": {
       "0": { "name": "图像" },

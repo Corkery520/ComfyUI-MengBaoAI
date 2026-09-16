@@ -1,28 +1,43 @@
-# MengBao Image API for ComfyUI
+# 萌宝AI ComfyUI Nodes
 
-ComfyUI custom nodes for MengBao Image API. 这是一个用于在 ComfyUI 工作流中调用萌宝图像 API 的第三方自定义节点插件，在 ComfyUI Manager 中显示为“萌宝AI”。
+萌宝AI ComfyUI 节点包。当前提供图片生成与编辑节点，后续的提示词、图像处理、电商、视频和工具节点都会在同一个插件仓库中持续扩展。
 
-Registry 包 ID：`mengbao-image-api`，当前版本：`1.0.0`。
+Registry 包 ID：`mengbao-image-api`，当前版本：`1.1.0`。插件来源统一为 `custom_nodes.ComfyUI-MengBao-Image-API`。
 
 ## 功能特性
 
 - 支持文生图、图生图和多参考图生成。
-- 提供 5 个 `IMAGE` 输入口，并支持图片批次；按模型最多使用 14 或 16 张参考图。
+- 新节点默认显示 3 个 `IMAGE` 输入口，可通过并排的“添加参考图”和“删除参考图”按钮调整；最少保留 3 个，按模型最多使用 14 或 16 张参考图。
 - 支持 4 个前端模型选项，并自动映射到对应 API 模型。
 - 支持尺寸、比例、分辨率、质量、背景、思考等级等模型专属参数。
 - `gpt-image-2.5` 支持 `opaque`、`transparent`、`auto` 背景参数。
 - GPT 模型选择透明背景时会追加透明 PNG 提示词；`gpt-image-2` 上游不原生支持背景参数，透明效果不保证一定生成真实 Alpha 通道。
 - 支持中文和英文界面，并跟随 ComfyUI 的 `Comfy.Locale` 设置切换。
 - 提供原始响应文本、失败 URL 和错误说明图，便于排查 API 问题。
-- 提供余额显示及“注册 API / 刷新余额 / 问题反馈”按钮；API Key 仅随本次余额请求使用，不写入插件文件。
+- 根据任务状态接口返回的 `progress` 更新 ComfyUI 顶部生成进度。
+- 提供余额显示及“注册 API / 保存 API / 刷新余额 / 问题反馈”按钮；保存、加载节点和每次执行完成后会自动刷新余额。
 
 ## 节点列表
 
 | 节点 ID | 显示名称 | 作用 |
 | --- | --- | --- |
-| `WANGImageAPI` | 中文：`萌宝图像 API` / 英文：`MengBao-Image-API` | 调用 TT Image 与 Nano Banana 系列模型生成或编辑图片 |
+| `WANGImageAPI` | 中文：`萌宝AI·图像生成` / 英文：`MengBao AI · Image Generation` | 调用 TT Image 与 Nano Banana 系列模型生成或编辑图片 |
 
-节点分类固定为：`MengBao/Image API`。
+`WANGImageAPI` 是已经投入使用的历史内部 ID，为保证旧工作流兼容不会改名。新节点内部 ID 统一使用 `MengBao_xxx`。
+
+## 节点包分类
+
+所有节点统一放在一级分类 `萌宝AI` 下，并按真实用途使用以下子分类：
+
+- `萌宝AI/基础`
+- `萌宝AI/提示词`
+- `萌宝AI/图像生成`
+- `萌宝AI/图像处理`
+- `萌宝AI/电商`
+- `萌宝AI/视频`
+- `萌宝AI/工具`
+
+当前节点分类为 `萌宝AI/图像生成`。后续新增节点请遵循 [节点开发规范](docs/NODE_DEVELOPMENT.md)，在 `nodes/` 对应子模块中注册，不要创建新的平级插件目录。
 
 ## 模型映射
 
@@ -102,7 +117,9 @@ pip install -r requirements.txt
 {"key":"your_api_key_here"}
 ```
 
-当两项同时存在时，`connection_json.key` 优先。请勿把真实 API Key 写入源码、README、工作流示例或提交到 GitHub。
+界面只显示一个“API 密钥 / 连接 JSON”输入框，既可填写原始 API Key，也可粘贴包含 `key` 字段的连接 JSON。旧工作流中的 `connection_json` 字段已在界面隐藏，并仅在可见输入框为空时作为兼容回退。请勿把真实 API Key 写入源码、README、工作流示例或提交到 GitHub。
+
+点击节点底部的“保存 API”会把当前密钥写入插件目录下被 Git 忽略的本机 `.env` 文件。后续工作流可以复用该密钥；接口只会向前端返回“是否已保存”，不会返回密钥内容。
 
 API Key 可在以下页面创建：
 
@@ -111,8 +128,8 @@ https://corkery.ai/api/console/keys
 ## 基础使用流程
 
 1. 安装插件并重启 ComfyUI。
-2. 在节点菜单的 `MengBao/Image API` 分类中添加节点。
-3. 填写 API Key 或连接 JSON。
+2. 在节点菜单的 `萌宝AI/图像生成` 分类中添加节点。
+3. 在“API 密钥 / 连接 JSON”中填写原始 API Key 或连接 JSON。
 4. 选择模型并设置该模型对应的参数。
 5. 输入提示词；图生图或多图参考时连接一个或多个参考图。
 6. 连接 `Images` 输出到预览或保存图像节点，然后执行工作流。
@@ -125,7 +142,7 @@ https://corkery.ai/api/console/keys
 
 ## 超时与重试
 
-- `timeout`：整个任务允许等待的最长秒数，默认 300 秒。
+- `timeout`：整个任务允许等待的最长秒数，默认 600 秒。
 - `retries`：状态查询和结果图片下载的重试次数。
 - 创建任务不会自动重试，避免服务端已经接收任务后重复提交和计费。
 
