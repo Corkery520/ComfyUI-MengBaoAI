@@ -4,6 +4,9 @@ import torch
 import torch.nn.functional as functional
 
 
+MAX_IMAGE_COUNT = 20
+
+
 def _first_frame(image):
     if not isinstance(image, torch.Tensor):
         raise TypeError("IMAGE input must be a torch.Tensor")
@@ -65,10 +68,8 @@ class MengBaoSmartCollage:
         return {
             "required": {},
             "optional": {
-                "image_1": ("IMAGE",),
-                "image_2": ("IMAGE",),
-                "image_3": ("IMAGE",),
-                "image_4": ("IMAGE",),
+                f"image_{index}": ("IMAGE",)
+                for index in range(1, MAX_IMAGE_COUNT + 1)
             },
         }
 
@@ -76,7 +77,7 @@ class MengBaoSmartCollage:
     RETURN_NAMES = ("image",)
     FUNCTION = "collage"
     CATEGORY = "萌宝AI/图像处理"
-    DESCRIPTION = "将一至四张图片自动排列为无间距拼图，并保持每张图片的宽高比。"
+    DESCRIPTION = "将一至二十张图片自动排列为无间距拼图，并保持每张图片的宽高比。"
     SEARCH_ALIASES = [
         "Meng",
         "MengBao",
@@ -94,17 +95,28 @@ class MengBaoSmartCollage:
         "拼图",
     ]
 
-    def collage(self, image_1=None, image_2=None, image_3=None, image_4=None):
+    def collage(
+        self, image_1=None, image_2=None, image_3=None, image_4=None, **extra_images
+    ):
+        supported_names = {f"image_{index}" for index in range(5, MAX_IMAGE_COUNT + 1)}
+        for name in extra_images:
+            if name not in supported_names:
+                raise ValueError(f"Unsupported IMAGE input: {name}")
+        # 按端口编号而非关键字插入顺序排列，保证工作流重载后的拼图顺序稳定。
+        ordered_images = [image_1, image_2, image_3, image_4] + [
+            extra_images.get(f"image_{index}")
+            for index in range(5, MAX_IMAGE_COUNT + 1)
+        ]
         images = [
             _first_frame(image)
-            for image in (image_1, image_2, image_3, image_4)
+            for image in ordered_images
             if image is not None
         ]
         if not images:
             raise ValueError("At least one IMAGE input is required")
 
         images = _normalize_channels(images)
-        # 参考节点在 1-3 张时使用单列，满 4 张时自动切换为 2x2。
+        # 延续原布局规则，以平方根决定列数，兼容原先 1-4 张的布局。
         columns = max(1, int(math.sqrt(len(images))))
         rows = []
         for start in range(0, len(images), columns):

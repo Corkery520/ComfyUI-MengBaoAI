@@ -279,6 +279,11 @@ const NODE_LABELS = {
 
 const NODE_CLASSES = new Set(Object.keys(NODE_LABELS.en));
 
+for (let index = 5; index <= 20; index += 1) {
+  NODE_LABELS.en.MengBaoSmartCollage.inputs[`image_${index}`] = `Image ${index}`;
+  NODE_LABELS.zh.MengBaoSmartCollage.inputs[`image_${index}`] = `图片 ${index}`;
+}
+
 function normalizeLanguage(locale) {
   return String(locale || "").toLowerCase().startsWith("zh") ? "zh" : "en";
 }
@@ -361,7 +366,8 @@ function configureEcommerceWidgets(node) {
 }
 
 function applyNodeLocalization(node, language = currentLanguage()) {
-  const labels = NODE_LABELS[normalizeLanguage(language)]?.[nodeClass(node)];
+  const normalizedLanguage = normalizeLanguage(language);
+  const labels = NODE_LABELS[normalizedLanguage]?.[nodeClass(node)];
   if (!labels) {
     return;
   }
@@ -387,6 +393,7 @@ function applyNodeLocalization(node, language = currentLanguage()) {
       output.label = label;
     }
   }
+  node._mengBaoCollageControls?.render(normalizedLanguage);
   node.setDirtyCanvas?.(true, true);
 }
 

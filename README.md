@@ -19,7 +19,7 @@
 | `WANGPromptOrganizer` | 萌宝AI·提示词整理器 | 保存、分组、搜索、导入和导出提示词 |
 | `WANGPromptReader` | 萌宝AI·提示词读取 | 在工作流中读取已保存提示词 |
 | `MengBaoEcommerceSettings` | MengBao AI电商设置 | 组合产品信息、电商参数、提示词和结构化 JSON |
-| `MengBaoSmartCollage` | 萌宝AI智能拼图 | 一至四张图片自动纵向或 2x2 无间距拼接 |
+| `MengBaoSmartCollage` | 萌宝AI智能拼图 | 默认 4 个图片端口，可添加至 20 个，自动等比无间距拼接 |
 | `MengBaoImageConstraint` | 萌宝图像约束 | 保持宽高比限制图片尺寸，必要时居中裁剪 |
 
 带有 `WANG` 的历史内部 ID 为兼容旧工作流而保留。中英文显示名会跟随 ComfyUI 的 `Comfy.Locale` 实时切换。
@@ -125,6 +125,7 @@ node --check web/js/image_api.js
 node --check web/js/load_image.js
 node --check web/js/node_localization.js
 node --check web/js/prompt_organizer.js
+node --check web/js/smart_collage.js
 ```
 
 ## 安全说明

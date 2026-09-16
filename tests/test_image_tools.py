@@ -152,7 +152,7 @@ class ImageToolsTests(unittest.TestCase):
         self.assertEqual(collage_inputs["required"], {})
         self.assertEqual(
             list(collage_inputs["optional"]),
-            ["image_1", "image_2", "image_3", "image_4"],
+            [f"image_{index}" for index in range(1, 21)],
         )
 
         constraint_inputs = constraint_module.MengBaoImageConstraint.INPUT_TYPES()[
@@ -192,6 +192,34 @@ class ImageToolsTests(unittest.TestCase):
     def test_smart_collage_requires_at_least_one_image(self):
         with self.assertRaisesRegex(ValueError, "At least one IMAGE"):
             collage_module.MengBaoSmartCollage().collage(None, None, None, None)
+
+    def test_smart_collage_accepts_twenty_images_in_socket_order(self):
+        inputs = {
+            f"image_{index}": torch.full((1, 4, 4, 3), index / 20)
+            for index in range(20, 0, -1)
+        }
+
+        (collage,) = collage_module.MengBaoSmartCollage().collage(**inputs)
+
+        self.assertEqual(tuple(collage.shape), (1, 20, 16, 3))
+        for index in range(20):
+            row, column = divmod(index, 4)
+            self.assertAlmostEqual(
+                float(collage[0, row * 4 + 2, column * 4 + 2, 0]),
+                (index + 1) / 20,
+                places=4,
+            )
+
+    def test_smart_collage_accepts_sparse_extra_inputs(self):
+        last = torch.full((1, 3, 5, 3), 0.8)
+        (collage,) = collage_module.MengBaoSmartCollage().collage(image_20=last)
+        torch.testing.assert_close(collage, last)
+
+    def test_smart_collage_rejects_inputs_beyond_twenty(self):
+        with self.assertRaisesRegex(ValueError, "Unsupported IMAGE input: image_21"):
+            collage_module.MengBaoSmartCollage().collage(
+                image_21=torch.zeros((1, 2, 2, 3))
+            )
 
     def test_image_constraint_preserves_aspect_ratio_inside_maximum_size(self):
         image = torch.zeros((1, 10, 20, 3), dtype=torch.float32)

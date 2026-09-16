@@ -16,7 +16,8 @@ All notable changes to this project are documented in this file.
 - Added the `MengBaoEcommerceSettings` node with product information, layout,
   typography, reverse-page, and model controls based on the MengBaoAI one-click
   e-commerce workflow.
-- Added `MengBaoSmartCollage` with the reference one-to-four image layout rules.
+- Added `MengBaoSmartCollage` with gapless, aspect-preserving layout and parallel
+  add/remove image buttons, retaining four sockets by default and supporting up to twenty.
 - Added `MengBaoImageConstraint` for aspect-preserving size limits and optional
   center cropping when minimum and maximum constraints conflict.
 

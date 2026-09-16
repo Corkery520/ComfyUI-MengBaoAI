@@ -155,12 +155,28 @@
   },
   "MengBaoSmartCollage": {
     "display_name": "MengBao AI · Smart Collage",
-    "description": "Arrange one to four images into a gapless collage while preserving each image's aspect ratio.",
+    "description": "Arrange one to twenty images into a gapless collage while preserving each image's aspect ratio.",
     "inputs": {
       "image_1": { "name": "Image 1" },
       "image_2": { "name": "Image 2" },
       "image_3": { "name": "Image 3" },
-      "image_4": { "name": "Image 4" }
+      "image_4": { "name": "Image 4" },
+      "image_5": { "name": "Image 5" },
+      "image_6": { "name": "Image 6" },
+      "image_7": { "name": "Image 7" },
+      "image_8": { "name": "Image 8" },
+      "image_9": { "name": "Image 9" },
+      "image_10": { "name": "Image 10" },
+      "image_11": { "name": "Image 11" },
+      "image_12": { "name": "Image 12" },
+      "image_13": { "name": "Image 13" },
+      "image_14": { "name": "Image 14" },
+      "image_15": { "name": "Image 15" },
+      "image_16": { "name": "Image 16" },
+      "image_17": { "name": "Image 17" },
+      "image_18": { "name": "Image 18" },
+      "image_19": { "name": "Image 19" },
+      "image_20": { "name": "Image 20" }
     },
     "outputs": {
       "0": { "name": "Image" }

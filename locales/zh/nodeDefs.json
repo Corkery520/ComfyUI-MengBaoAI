@@ -155,12 +155,28 @@
   },
   "MengBaoSmartCollage": {
     "display_name": "萌宝AI智能拼图",
-    "description": "将一至四张图片自动排列为无间距拼图，并保持每张图片的宽高比。",
+    "description": "将一至二十张图片自动排列为无间距拼图，并保持每张图片的宽高比。",
     "inputs": {
       "image_1": { "name": "图片 1" },
       "image_2": { "name": "图片 2" },
       "image_3": { "name": "图片 3" },
-      "image_4": { "name": "图片 4" }
+      "image_4": { "name": "图片 4" },
+      "image_5": { "name": "图片 5" },
+      "image_6": { "name": "图片 6" },
+      "image_7": { "name": "图片 7" },
+      "image_8": { "name": "图片 8" },
+      "image_9": { "name": "图片 9" },
+      "image_10": { "name": "图片 10" },
+      "image_11": { "name": "图片 11" },
+      "image_12": { "name": "图片 12" },
+      "image_13": { "name": "图片 13" },
+      "image_14": { "name": "图片 14" },
+      "image_15": { "name": "图片 15" },
+      "image_16": { "name": "图片 16" },
+      "image_17": { "name": "图片 17" },
+      "image_18": { "name": "图片 18" },
+      "image_19": { "name": "图片 19" },
+      "image_20": { "name": "图片 20" }
     },
     "outputs": {
       "0": { "name": "图像" }
