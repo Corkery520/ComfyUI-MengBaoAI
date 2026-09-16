@@ -159,7 +159,7 @@ const NODE_LABELS = {
   },
   zh: {
     MengBaoGlobalAPIKey: {
-      title: "萌宝全局API Key管理",
+      title: "萌宝AI全局API Key管理",
       widgets: { api_key: "API 密钥" },
       inputs: { api_key: "API 密钥" },
       outputs: ["状态"],
@@ -196,7 +196,7 @@ const NODE_LABELS = {
       options: { custom: "自定义" },
     },
     MengBaoSmartCollage: {
-      title: "萌宝AI智能拼图",
+      title: "萌宝AI·智能拼图",
       widgets: {},
       inputs: {
         image_1: "图片 1",
@@ -207,7 +207,7 @@ const NODE_LABELS = {
       outputs: ["图像"],
     },
     MengBaoImageConstraint: {
-      title: "萌宝图像约束",
+      title: "萌宝AI·图像约束",
       widgets: {
         max_width: "最大宽度",
         max_height: "最大高度",
@@ -256,7 +256,7 @@ const NODE_LABELS = {
       outputs: ["提示词", "状态"],
     },
     MengBaoEcommerceSettings: {
-      title: "MengBao AI电商设置",
+      title: "萌宝AI·电商设置",
       widgets: {
         product_name: "产品名称",
         copy_information: "文案信息",

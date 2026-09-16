@@ -392,15 +392,19 @@ assert.deepEqual(initialBalanceNode._mengBaoBalanceState, {
 });
 
 const liveNode = makeNode();
+const replicaSocket = { name: "replica_settings", type: "MENGBAO_REPLICA_SETTINGS", link: null };
+liveNode.inputs.push(replicaSocket);
 globalThis.__mengBaoTestApp.graph._nodes = [liveNode];
 await registeredExtension.setup();
 await waitForUpdates();
 assert.equal(liveNode.title, "MengBao AI · Image Generation");
+assert.equal(replicaSocket.label, "Replica Settings");
 
 localeState.value = "zh-CN";
 localeSetting.onChange("zh-CN");
 await waitForUpdates();
 assert.equal(liveNode.title, "萌宝AI·图像生成");
+assert.equal(replicaSocket.label, "复刻设置");
 assert.equal(widget(liveNode, "prompt").value, "生成一张电影感图片");
 assert.equal(widget(liveNode, "ui_language").value, "zh");
 assert.equal(widget(liveNode, "tt2_size").value, "auto");
@@ -418,6 +422,7 @@ await waitForUpdates();
 assert.equal(liveNode.title, "MengBao AI · Image Generation");
 assert.equal(widget(liveNode, "prompt").value, "不要改写这条自定义提示词");
 assert.equal(widget(liveNode, "ui_language").value, "en");
+assert.equal(replicaSocket.label, "Replica Settings");
 
 widget(liveNode, "api_key").value = "execution-key";
 let automaticBalanceRequests = 0;

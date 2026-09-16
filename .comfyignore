@@ -1,15 +1,28 @@
-# Development and repository-only files
+# Registry packages contain runtime code and documentation, not development files.
+.git/
 .github/
-tests/
 .gitignore
-docs/
-
-# Local caches and generated artifacts
+.comfyignore
+tests/
 __pycache__/
 *.py[cod]
-.pytest_cache/
+*.egg-info/
+.venv/
+venv/
+env/
+node_modules/
 build/
 dist/
-*.egg-info/
+.env
+.env.*
 .mengbaoai/
 data/prompts.json
+*.key
+*.pem
+*.log
+*.tmp
+*.bak
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db

@@ -184,6 +184,7 @@ class MengBaoEcommerceSettings:
         "萌宝AI",
         "萌宝AI 电商设置",
         "MengBao AI电商设置",
+        "萌宝AI·电商设置",
         "一键电商",
         "电商设置",
     ]

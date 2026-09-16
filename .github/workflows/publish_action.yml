@@ -3,11 +3,8 @@ name: Publish to Comfy Registry
 on:
   workflow_dispatch:
   push:
-    branches:
-      - main
-    paths:
-      - "pyproject.toml"
-      - ".github/workflows/publish_action.yml"
+    branches: [main]
+    paths: [pyproject.toml]
 
 permissions:
   contents: read
@@ -17,119 +14,34 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  publish-node:
-    name: Validate and publish custom node
+  preflight:
     runs-on: ubuntu-latest
-    env:
-      REGISTRY_ACCESS_TOKEN: ${{ secrets.REGISTRY_ACCESS_TOKEN }}
     steps:
-      - name: Check out repository
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-
-      - name: Install test dependencies
+      - name: Require Registry publishing token
+        env:
+          REGISTRY_ACCESS_TOKEN: ${{ secrets.REGISTRY_ACCESS_TOKEN }}
         shell: bash
         run: |
-          python -m pip install --disable-pip-version-check -r requirements.txt
-          python -m pip install --disable-pip-version-check \
-            --index-url https://download.pytorch.org/whl/cpu torch
-
-      - name: Validate Registry metadata
-        shell: bash
-        run: |
-          python - <<'PY'
-          import pathlib
-          import re
-          import tomllib
-
-          root = pathlib.Path(".")
-          metadata = tomllib.loads((root / "pyproject.toml").read_text(encoding="utf-8"))
-          project = metadata["project"]
-          comfy = metadata["tool"]["comfy"]
-
-          assert project["name"] == "mengbaoai"
-          assert project["version"] == "1.0.0"
-          assert re.fullmatch(r"\d+\.\d+\.\d+", project["version"])
-          assert "萌宝AI" in project["description"]
-          assert project["urls"]["Repository"] == "https://github.com/Corkery520/ComfyUI-MengBaoAI"
-          assert comfy["PublisherId"] == "corkery520"
-          assert comfy["DisplayName"] == "萌宝AI ComfyUI 综合节点包"
-          assert "dependencies" in project["dynamic"]
-
-          required_paths = [
-              "__init__.py",
-              "requirements.txt",
-              "README.md",
-              "LICENSE",
-              "nodes/image_api/generate.py",
-              "nodes/image_tools/split_crop.py",
-              "nodes/image_tools/load_image.py",
-              "nodes/image_tools/collage.py",
-              "nodes/image_tools/constraint.py",
-              "nodes/prompt/organizer.py",
-              "nodes/ecommerce/settings.py",
-              "nodes/tools/global_api_key.py",
-              "api/auth.py",
-              "api/image_client.py",
-              "api/prompt_routes.py",
-              "utils/image.py",
-              "utils/prompt_store.py",
-              "web/js/image_api.js",
-              "web/js/load_image.js",
-              "web/js/prompt_organizer.js",
-              "web/js/global_api_key.js",
-              "locales/en/nodeDefs.json",
-              "locales/zh/nodeDefs.json",
-          ]
-          missing = [path for path in required_paths if not (root / path).is_file()]
-          if missing:
-              raise SystemExit(f"Missing required files: {missing}")
-          PY
-
-      - name: Run basic checks
-        shell: bash
-        run: |
-          python -m unittest discover -s tests -v
-          python -m compileall -q .
-          for file in web/js/*.js; do node --check "$file"; done
-          node --test tests/*.mjs
-          python - <<'PY'
-          import json
-          import pathlib
-          import tomllib
-
-          tomllib.loads(pathlib.Path("pyproject.toml").read_text(encoding="utf-8"))
-          for path in pathlib.Path("locales").glob("*/nodeDefs.json"):
-              json.loads(path.read_text(encoding="utf-8"))
-          PY
-
-      - name: Check Registry security rules
-        shell: bash
-        run: |
-          if grep -R -n -E '(^|[^A-Za-z_])(eval|exec)[[:space:]]*\(' --include='*.py' --exclude-dir='.git' .; then
-            echo "Registry-prohibited eval/exec call detected."
+          if [ -z "$REGISTRY_ACCESS_TOKEN" ]; then
+            echo "::error::REGISTRY_ACCESS_TOKEN is not configured. No Registry version has been published."
+            echo "Configure a Registry publisher token in repository Actions secrets, then run this workflow again." >> "$GITHUB_STEP_SUMMARY"
             exit 1
           fi
-          if grep -R -n -E '(subprocess|os\.system).*(pip|pip3)[[:space:]]+install' --include='*.py' --exclude-dir='.git' .; then
-            echo "Registry-prohibited runtime package installation detected."
-            exit 1
-          fi
-
+  validate:
+    needs: preflight
+    uses: ./.github/workflows/ci.yml
+  publish-node:
+    name: Publish validated node pack
+    needs: validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
       - name: Publish custom node
-        if: ${{ env.REGISTRY_ACCESS_TOKEN != '' }}
         uses: Comfy-Org/publish-node-action@main
         with:
           personal_access_token: ${{ secrets.REGISTRY_ACCESS_TOKEN }}
-
-      - name: Skip publish without Registry token
-        if: ${{ env.REGISTRY_ACCESS_TOKEN == '' }}
-        run: echo "REGISTRY_ACCESS_TOKEN is not configured; validation completed without publishing."
+          skip_checkout: "true"
+      - name: Record submission
+        shell: bash
+        run: |
+          echo "Registry upload completed. Verify the version is Active and has an install download URL before announcing availability in Manager." >> "$GITHUB_STEP_SUMMARY"

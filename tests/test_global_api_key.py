@@ -40,6 +40,7 @@ class GlobalAPIKeyTests(unittest.TestCase):
 
     def test_global_node_has_only_one_key_field_and_safe_status_output(self):
         node_class = node_pack.NODE_CLASS_MAPPINGS["MengBaoGlobalAPIKey"]
+        self.assertEqual(node_pack.NODE_DISPLAY_NAME_MAPPINGS["MengBaoGlobalAPIKey"], "萌宝AI全局API Key管理")
         self.assertEqual(list(node_class.INPUT_TYPES()["required"]), ["api_key"])
         self.assertEqual(node_class.RETURN_TYPES, ("STRING",))
         self.assertEqual(node_class.RETURN_NAMES, ("status",))

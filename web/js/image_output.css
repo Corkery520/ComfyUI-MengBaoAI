@@ -1,0 +1,68 @@
+.mengbao-image-output-node {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  height: 404px;
+  color: #ddd;
+  font: 13px sans-serif;
+  box-sizing: border-box;
+}
+.mengbao-image-output-node [hidden] { display: none; }
+.mengbao-image-output-name, .mengbao-image-output-status {
+  flex: 0 0 20px;
+  line-height: 20px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  user-select: text;
+}
+.mengbao-image-output-zone {
+  flex: 1 1 0;
+  min-height: 246px;
+  border: 1px solid #555;
+  background: #292929;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+.mengbao-image-output-zone img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.mengbao-image-output-hint { padding: 8px; text-align: center; line-height: 1.5; }
+.mengbao-image-output-actions, .mengbao-image-output-pager { display: flex; gap: 8px; flex: 0 0 32px; }
+.mengbao-image-output-pager { flex-basis: 28px; align-items: center; justify-content: center; }
+.mengbao-image-output-pager span { min-width: 70px; text-align: center; }
+.mengbao-image-output-node button {
+  color: #fff;
+  border: 1px solid #606060;
+  border-radius: 6px;
+  background: #464646;
+  font: inherit;
+  line-height: 20px;
+  padding: 3px 8px;
+  cursor: pointer;
+}
+.mengbao-image-output-actions button { flex: 1 1 0; min-width: 0; background: #477ac1; border-color: #477ac1; }
+.mengbao-image-output-pager button { flex: 0 0 28px; height: 28px; padding: 3px; }
+.mengbao-image-output-node button:hover:not(:disabled) { filter: brightness(1.12); }
+.mengbao-image-output-node button:disabled { cursor: not-allowed; opacity: .55; }
+.mengbao-image-output-node button:focus-visible { outline: 2px solid #82aae8; outline-offset: 1px; }
+.mengbao-image-output-source {
+  flex: 0 0 28px;
+  min-width: 0;
+  width: 100%;
+  height: 28px;
+  box-sizing: border-box;
+  background: #292929;
+  color: #eee;
+  border: 1px solid #555;
+  border-radius: 4px;
+  font: inherit;
+}

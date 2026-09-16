@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="zh">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>素材节点隔离预览</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 24px; background: #202224; color: #eee; font: 14px Arial, sans-serif; }
+    header { display: flex; gap: 12px; align-items: center; margin-bottom: 24px; }
+    select, button { background: #34373b; color: #eee; border: 1px solid #656970; padding: 8px; border-radius: 4px; }
+    main { display: flex; flex-wrap: wrap; gap: 24px; }
+    section { width: 400px; max-width: 100%; border: 1px solid #62666b; background: #303235; border-radius: 8px; overflow: hidden; }
+    section h2 { margin: 0; padding: 16px; font-size: 20px; background: #383a3e; }
+    .ports { text-align: right; padding: 12px 16px; line-height: 24px; }
+    .widget { padding: 0 12px 12px; }
+    @media (max-width: 480px) { body { padding: 12px; } header { flex-wrap: wrap; } }
+  </style>
+</head>
+<body>
+  <header>
+    <select id="locale" aria-label="语言"><option value="zh-CN">中文</option><option value="en">English</option><option value="fr">Français</option></select>
+    <button id="fixture">加载测试长图</button>
+  </header>
+  <main></main>
+  <script type="module">
+    import { app } from "/scripts/app.js";
+    import { setupNode } from "/extensions/mengbao/js/material_images.js";
+    function createNode(type) {
+      const section = document.createElement("section");
+      const title = document.createElement("h2");
+      const ports = document.createElement("div"); ports.className = "ports";
+      const widget = document.createElement("div"); widget.className = "widget";
+      section.append(title, ports, widget); document.querySelector("main").append(section);
+      const node = { type, widgets: [{ name: type === "MengBaoLoadImage" ? "image" : "material_id", value: "" }], outputs: [{ name: "image" }, { name: "mask" }],
+        size: [400, 430], addDOMWidget(name, kind, element) { widget.append(element); }, computeSize: () => [400, 430], setSize() {},
+        setDirtyCanvas() { title.textContent = this.title; ports.replaceChildren(...this.outputs.map((output) => { const port = document.createElement("div"); port.textContent = output.label || output.name; return port; })); }
+      };
+      app.graph._nodes.push(node); setupNode(node); return node;
+    }
+    const loader = createNode("MengBaoLoadImage");
+    createNode("MengBaoMaterialLibrary");
+    for (const extension of app.extensions) await extension.setup?.();
+    document.querySelector("#locale").addEventListener("change", () => app.ui.settings.settingsLookup["Comfy.Locale"].onChange());
+    document.querySelector("#fixture").addEventListener("click", async () => {
+      const image = await (await fetch("/fixture.png")).blob();
+      await loader._mengBaoMaterialControls.binding.receiveFiles([new File([image], "Long page.png", { type: "image/png" })]);
+    });
+  </script>
+</body>
+</html>

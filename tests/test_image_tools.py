@@ -370,8 +370,8 @@ class ImageToolsTests(unittest.TestCase):
 
     def test_new_image_tools_are_registered_with_expected_names(self):
         expected = {
-            "MengBaoSmartCollage": "萌宝AI智能拼图",
-            "MengBaoImageConstraint": "萌宝图像约束",
+            "MengBaoSmartCollage": "萌宝AI·智能拼图",
+            "MengBaoImageConstraint": "萌宝AI·图像约束",
         }
         for node_id, display_name in expected.items():
             with self.subTest(node_id=node_id):

@@ -72,7 +72,7 @@ const collageNode = {
   setDirtyCanvas() {},
 };
 localization.applyNodeLocalization(collageNode, "zh-CN");
-assert.equal(collageNode.title, "萌宝AI智能拼图");
+assert.equal(collageNode.title, "萌宝AI·智能拼图");
 assert.equal(collageNode.inputs[0].label, "图片 1");
 assert.equal(collageNode.outputs[0].label, "图像");
 
@@ -149,7 +149,7 @@ assert.equal(
 );
 
 localization.applyNodeLocalization(ecommerceNode, "zh-CN");
-assert.equal(ecommerceNode.title, "MengBao AI电商设置");
+assert.equal(ecommerceNode.title, "萌宝AI·电商设置");
 assert.equal(ecommerceNode.widgets[0].label, "语言");
 assert.equal(ecommerceNode.widgets[1].options.getOptionLabel("详情页"), "详情页");
 assert.equal(ecommerceNode.outputs[0].label, "用户提示词");

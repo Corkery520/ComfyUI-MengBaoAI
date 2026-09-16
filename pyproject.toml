@@ -1,7 +1,7 @@
 [project]
 name = "mengbaoai"
 version = "1.0.0"
-description = "萌宝AI ComfyUI 综合节点包，集成图像生成、电商设置、提示词管理与图像处理能力。"
+description = "MengBaoAI | 萌宝AI ComfyUI 综合节点套件：图像生成、图片复刻、电商设置、提示词库、素材库、历史记录和图像处理。Image generation, replication, e-commerce and image tools."
 readme = "README.md"
 license = { file = "LICENSE" }
 requires-python = ">=3.9"
@@ -14,6 +14,8 @@ keywords = [
     "image-processing",
     "ecommerce",
     "prompt-management",
+    "image-replication",
+    "material-library",
 ]
 classifiers = [
     "License :: OSI Approved :: MIT License",
@@ -32,4 +34,4 @@ Documentation = "https://github.com/Corkery520/ComfyUI-MengBaoAI#readme"
 
 [tool.comfy]
 PublisherId = "corkery520"
-DisplayName = "萌宝AI ComfyUI 综合节点包"
+DisplayName = "MengBaoAI · 萌宝AI 综合节点套件"

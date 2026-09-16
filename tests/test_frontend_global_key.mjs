@@ -80,7 +80,7 @@ assert.ok(availableHeight >= requiredHeight,
 assert.equal(controls.status.style.flexShrink, "0");
 assert.equal(controls.saveButton.style.whiteSpace, "nowrap");
 assert.equal(controls.saveButton.title, controls.saveButton.textContent);
-assert.equal(node.title, "萌宝全局API Key管理");
+assert.equal(node.title, "萌宝AI全局API Key管理");
 assert.equal(node.widgets[0].hidden, true);
 assert.equal(controls.input.type, "password");
 assert.equal(controls.saveButton.textContent, "保存全局API Key");

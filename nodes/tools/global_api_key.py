@@ -15,6 +15,7 @@ class MengBaoGlobalAPIKey:
     SEARCH_ALIASES = [
         "Meng", "MengBao", "MengBaoAI", "MengBao AI", "MengBaoGlobalAPIKey",
         "Global API Key", "API Key Manager", "萌宝", "萌宝AI", "萌宝全局API Key管理",
+        "萌宝AI全局API Key管理",
         "全局密钥", "密钥管理", "API密钥", "全局API Key",
     ]
 

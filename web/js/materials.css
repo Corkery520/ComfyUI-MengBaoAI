@@ -1,0 +1,96 @@
+.mengbao-material-node {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  height: 336px;
+  color: #ddd;
+  font: 13px sans-serif;
+  box-sizing: border-box;
+}
+.mengbao-material-node-name { height: 20px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mengbao-material-node-zone {
+  height: 246px;
+  flex: 0 0 246px;
+  border: 1px solid #555;
+  background: #292929;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+.mengbao-material-node-zone:focus-visible, .mengbao-material-import-zone:focus-visible { outline: 2px solid #82aae8; outline-offset: 1px; }
+.mengbao-material-node-zone img { width: 100%; min-height: 0; flex: 1 1 0; order: -1; object-fit: contain; }
+.mengbao-material-node-zone img[hidden] { display: none; }
+.mengbao-material-node-hint { flex: 0 0 auto; padding: 8px; max-width: 100%; text-align: center; line-height: 1.5; }
+.mengbao-material-node-actions { display: flex; gap: 8px; height: 32px; }
+.mengbao-material-node-actions button { flex: 1 1 0; min-width: 0; padding: 3px 8px; }
+.mengbao-material-node-status { height: 20px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mengbao-material-node button, .mengbao-material-dialog button {
+  background: #464646;
+  color: #fff;
+  border: 1px solid #606060;
+  border-radius: 6px;
+  font: inherit;
+  min-height: 30px;
+  cursor: pointer;
+}
+.mengbao-material-node button.mengbao-primary, .mengbao-material-dialog button.mengbao-primary { background: #477ac1; border-color: #477ac1; }
+.mengbao-material-node button:disabled, .mengbao-material-dialog button:disabled { cursor: not-allowed; opacity: .55; }
+.mengbao-material-node button:hover:not(:disabled), .mengbao-material-dialog button:hover:not(:disabled) { filter: brightness(1.12); }
+.mengbao-material-dialog {
+  background: #262626;
+  color: #eee;
+  border: 1px solid #626262;
+  border-radius: 8px;
+  padding: 16px;
+  width: 880px;
+  max-width: calc(100vw - 36px);
+  max-height: 86vh;
+  box-sizing: border-box;
+  font: 13px sans-serif;
+}
+.mengbao-material-dialog::backdrop { background: rgba(0, 0, 0, .66); }
+.mengbao-material-dialog[open] { display: flex; flex-direction: column; gap: 10px; }
+.mengbao-material-dialog header, .mengbao-material-dialog footer { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.mengbao-material-dialog h2 { font-size: 18px; line-height: 1.4; font-weight: 600; margin: 0; }
+.mengbao-material-dialog .mengbao-material-close { width: 32px; font-size: 20px; flex: 0 0 32px; }
+.mengbao-material-toolbar, .mengbao-material-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.mengbao-material-toolbar input[type=search] { flex: 1 1 220px; min-width: 100px; }
+.mengbao-material-dialog input:not([type=checkbox]), .mengbao-material-dialog select {
+  background: #1d1d1d;
+  color: #eee;
+  border: 1px solid #5c5c5c;
+  border-radius: 4px;
+  padding: 5px 8px;
+  min-height: 30px;
+  box-sizing: border-box;
+  font: inherit;
+  max-width: 100%;
+}
+.mengbao-material-favorites { display: flex; gap: 5px; align-items: center; white-space: nowrap; }
+.mengbao-material-actions button { padding: 4px 10px; }
+.mengbao-material-import-zone { border: 1px dashed #666; padding: 10px; text-align: center; cursor: pointer; color: #ccc; line-height: 1.5; }
+.mengbao-material-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; overflow-y: auto; min-height: 160px; max-height: 46vh; padding: 2px; }
+.mengbao-material-card { border: 1px solid #555; border-radius: 6px; padding: 8px; min-width: 0; }
+.mengbao-material-card.selected { border-color: #8fbaff; outline: 1px solid #8fbaff; }
+.mengbao-material-card .mengbao-material-preview { display: block; background: #191919; width: 100%; aspect-ratio: 4 / 3; border: 0; border-radius: 0; padding: 0; overflow: hidden; }
+.mengbao-material-preview img { width: 100%; height: 100%; object-fit: contain; }
+.mengbao-material-name { margin-top: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mengbao-material-dimensions { color: #aaa; font-size: 12px; margin-top: 3px; }
+.mengbao-material-card-controls { display: flex; gap: 4px; margin-top: 6px; }
+.mengbao-material-card-controls button { flex: 1 1 0; min-width: 0; font-size: 11px; }
+.mengbao-material-card-controls .mengbao-material-star { flex: 0 0 28px; color: #e6c36a; font-size: 18px; }
+.mengbao-material-card-category { margin-top: 6px; width: 100%; }
+.mengbao-material-empty { grid-column: 1 / -1; display: flex; align-items: center; justify-content: center; min-height: 150px; color: #aaa; }
+.mengbao-material-status { min-height: 16px; line-height: 1.4; overflow-wrap: anywhere; }
+.mengbao-material-status.error, .mengbao-material-node-status.error { color: #ff9898; }
+.mengbao-material-dialog footer button { padding: 4px 14px; }
+@media (max-width: 500px) {
+  .mengbao-material-dialog { padding: 12px; max-width: calc(100vw - 20px); }
+  .mengbao-material-grid { grid-template-columns: repeat(auto-fill, minmax(135px, 1fr)); }
+  .mengbao-material-toolbar select { flex: 1 1 140px; }
+}

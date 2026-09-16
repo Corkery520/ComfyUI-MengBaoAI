@@ -1,0 +1,64 @@
+.mengbao-replica-node { width: 100%; box-sizing: border-box; display: flex; flex-direction: column; gap: 8px; color: #d7d7d7; font: 14px/1.45 Arial, sans-serif; padding: 8px 0; }
+.mengbao-replica-node img { width: 100%; height: 210px; object-fit: contain; display: block; background: #262626; border: 1px solid #484848; box-sizing: border-box; }
+.mengbao-replica-node .replica-node-empty { height: 210px; display: grid; place-items: center; background: #262626; border: 1px solid #484848; box-sizing: border-box; }
+.mengbao-replica-node [hidden] { display: none !important; }
+.mengbao-replica-node button, .mengbao-replica-dialog button { min-height: 34px; padding: 7px 12px; border: 1px solid #555; border-radius: 5px; color: #eee; background: #424242; font: inherit; cursor: pointer; }
+.mengbao-replica-node button, .mengbao-replica-dialog .replica-primary { background: #567bbb; border-color: #567bbb; }
+.mengbao-replica-node button:hover:not(:disabled), .mengbao-replica-dialog .replica-primary:hover:not(:disabled) { background: #678bca; }
+.mengbao-replica-node button:disabled, .mengbao-replica-dialog button:disabled { opacity: .5; cursor: default; }
+.replica-node-status { min-height: 40px; max-height: 80px; overflow: auto; overflow-wrap: anywhere; white-space: pre-wrap; }
+.replica-node-report { height: 200px; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; margin: 0; background: #262626; padding: 8px; box-sizing: border-box; }
+.mengbao-replica-dialog { width: min(1240px, 94vw); height: min(900px, 92vh); max-width: none; max-height: none; padding: 0; border: 1px solid #555; border-radius: 8px; background: #303030; color: #dedede; font: 14px/1.45 Arial, sans-serif; }
+.mengbao-replica-dialog[open] { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; }
+.mengbao-replica-dialog::backdrop, .replica-viewer::backdrop { background: #0009; }
+.mengbao-replica-dialog header { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid #4b4b4b; }
+.mengbao-replica-dialog h2 { margin: 0; font-size: 18px; font-weight: 600; }
+.mengbao-replica-dialog .replica-close, .replica-viewer .replica-close { font-size: 24px; width: 36px; height: 36px; padding: 0; flex-shrink: 0; }
+.replica-body { display: grid; grid-template-columns: minmax(0, 1fr) 360px; min-height: 0; }
+.replica-canvas-pane, .replica-editor-pane { padding: 14px; min-width: 0; min-height: 0; overflow: auto; }
+.replica-editor-pane { border-left: 1px solid #4b4b4b; }
+.replica-stage { position: relative; width: 100%; max-width: 100%; margin: 0 auto; background: #252525; }
+.replica-source { display: block; width: 100%; height: auto; }
+.replica-overlay { position: absolute; inset: 0; pointer-events: none; }
+.mengbao-replica-dialog .replica-box { position: absolute; min-height: 0; min-width: 0; padding: 0; border: 2px solid #80b6db; border-radius: 0; background: #2e88aa18; color: #fff; text-align: left; display: flex; align-items: flex-start; justify-content: flex-start; pointer-events: auto; touch-action: none; font-weight: bold; text-shadow: 0 1px 3px #000; cursor: move; }
+.mengbao-replica-dialog .replica-box.selected { border-color: #f1c05e; background: #d4a43420; z-index: 1; }
+.mengbao-replica-dialog .replica-box.pending { border-style: dashed; }
+.replica-handle { position: absolute; right: -2px; bottom: -2px; width: 20px; height: 20px; background: #303030; display: grid; place-items: center; cursor: nwse-resize; }
+.replica-field { display: flex; flex-direction: column; gap: 4px; margin: 10px 0; min-width: 0; }
+.mengbao-replica-dialog input:not([type=checkbox]), .mengbao-replica-dialog textarea, .mengbao-replica-dialog select { box-sizing: border-box; width: 100%; min-width: 0; padding: 7px 8px; border: 1px solid #606060; border-radius: 4px; background: #232323; color: #eee; font: inherit; }
+.mengbao-replica-dialog textarea { resize: vertical; min-height: 60px; }
+.mengbao-replica-dialog fieldset { border: 0; margin: 0; padding: 0 12px 12px; min-width: 0; }
+.replica-element { border: 1px solid #555; border-radius: 5px; margin-bottom: 8px; }
+.replica-element summary { padding: 10px; cursor: pointer; overflow-wrap: anywhere; }
+.replica-review { display: block; color: #edc571; font-size: 12px; }
+.replica-checkbox { display: flex; align-items: center; gap: 7px; margin: 10px 0; }
+.replica-position { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin: 10px 0; }
+.replica-position-label, .replica-position > button { grid-column: 1 / -1; }
+.replica-references { display: flex; flex-direction: column; gap: 6px; }
+.replica-upload-zone { padding: 8px; border: 1px dashed #777; background: #292929; cursor: pointer; }
+.replica-upload-zone:focus, .replica-upload-zone:hover { outline: 1px solid #85a8d4; }
+.replica-upload-hint { display: block; text-align: center; margin-top: 6px; color: #d5d5d5; }
+.replica-thumbnails { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.replica-thumbnail { position: relative; aspect-ratio: 1; min-width: 0; }
+.replica-thumbnail > button:first-child { width: 100%; height: 100%; padding: 0; }
+.replica-thumbnail img { width: 100%; height: 100%; object-fit: contain; }
+.mengbao-replica-dialog .replica-reference-remove { position: absolute; right: 0; top: 0; width: 24px; min-height: 24px; height: 24px; padding: 0; background: #762e33; }
+.replica-reference-actions, .replica-footer-actions { display: flex; gap: 8px; }
+.replica-reference-actions > button { flex: 1; min-width: 0; }
+.replica-references + button { width: 100%; margin-top: 8px; }
+.replica-delete { margin-top: 10px; color: #efb3b3 !important; }
+.replica-add { width: 100%; margin-bottom: 10px; }
+.mengbao-replica-dialog footer { padding: 12px 16px; border-top: 1px solid #4b4b4b; display: flex; gap: 12px; align-items: center; justify-content: space-between; }
+.replica-status { min-width: 0; overflow-wrap: anywhere; white-space: pre-wrap; }
+.replica-status.error { color: #f1a1a1; }
+.replica-footer-actions { flex-shrink: 0; }
+.replica-viewer { padding: 12px; border: 1px solid #777; border-radius: 6px; background: #252525; max-width: 94vw; max-height: 94vh; }
+.replica-viewer img { display: block; max-width: 88vw; max-height: 84vh; object-fit: contain; }
+.replica-viewer .replica-close { display: block; margin-left: auto; background: #444; color: white; border: 0; cursor: pointer; }
+@media (max-width: 720px) {
+  .mengbao-replica-dialog { width: 96vw; height: 94vh; }
+  .replica-body { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(160px, 35vh) minmax(0, 1fr); }
+  .replica-editor-pane { border-left: 0; border-top: 1px solid #555; }
+  .mengbao-replica-dialog footer { flex-direction: column; align-items: stretch; padding: 8px; }
+  .replica-footer-actions > button { flex: 1; min-width: 0; }
+}

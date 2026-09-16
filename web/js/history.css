@@ -1,0 +1,96 @@
+.mengbao-library-dock {
+  position: fixed; right: 18px; bottom: 92px; z-index: 100002;
+  display: flex; flex-direction: column; gap: 6px; padding: 6px;
+  border: 1px solid #555; border-radius: 8px; background: #272727;
+  box-shadow: 0 10px 34px rgba(0,0,0,.38);
+}
+.mengbao-library-dock .mengbao-library-fab {
+  flex: 0 0 44px; width: 44px; height: 44px; min-height: 44px; padding: 0;
+  border-radius: 6px; border: 0; background: #2f2f2f;
+  color: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer;
+}
+.mengbao-library-fab .pi { font-size: 22px; }
+.mengbao-library-dock .mengbao-library-fab:hover { background: #414141; }
+.mengbao-library-fab:focus-visible { outline: 2px solid #88b4ee; outline-offset: 2px; }
+body:has(#mengbao-library-dock) .wang-prompt-panel { right: 90px; width: min(660px, calc(100vw - 108px)); }
+body:has(#mengbao-library-dock) .mengbao-material-dialog { margin-right: 90px; max-width: calc(100vw - 108px); }
+.mengbao-history-dialog {
+  width: 1160px; max-width: calc(100vw - 108px); height: min(800px, 88vh); margin-right: 90px;
+  padding: 0; border: 1px solid #545454; border-radius: 8px;
+  background: #202020; color: #eee; box-sizing: border-box; font: 14px Arial, "Microsoft YaHei", sans-serif;
+}
+.mengbao-history-dialog::backdrop { background: rgba(0,0,0,.66); }
+.mengbao-history-dialog[open] { display: flex; flex-direction: column; gap: 0; }
+.mengbao-history-dialog header, .mengbao-history-dialog footer {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 12px 18px; flex: 0 0 auto;
+}
+.mengbao-history-dialog header { border-bottom: 1px solid #3c3c3c; }
+.mengbao-history-dialog h2 { font-size: 20px; line-height: 1.4; margin: 0; font-weight: 700; }
+.mengbao-history-dialog button, .mengbao-history-download {
+  background: #353535; border: 1px solid #555; border-radius: 6px; color: #eee;
+  min-height: 32px; padding: 6px 12px; font: inherit; cursor: pointer; line-height: 1.4;
+}
+.mengbao-history-dialog button:disabled { opacity: .5; cursor: not-allowed; }
+.mengbao-history-dialog button:hover:not(:disabled) { background: #454545; }
+.mengbao-history-actions { display: flex; gap: 8px; }
+.mengbao-history-actions button { width: 36px; height: 34px; padding: 0; }
+.mengbao-history-toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; padding: 14px 18px 10px; }
+.mengbao-history-toolbar input[type=search], .mengbao-history-toolbar select {
+  background: #292929; border: 1px solid #555; border-radius: 4px; padding: 7px 10px;
+  color: #eee; font: inherit; height: 34px; box-sizing: border-box; max-width: 100%;
+}
+.mengbao-history-toolbar input[type=search] { flex: 1 1 260px; min-width: 100px; }
+.mengbao-history-toolbar label { display: flex; gap: 6px; align-items: center; white-space: nowrap; }
+.mengbao-history-toolbar input[type=checkbox] { accent-color: #7babe9; }
+.mengbao-history-filters { display: flex; flex-wrap: wrap; gap: 8px; padding: 0 18px 14px; border-bottom: 1px solid #3c3c3c; }
+.mengbao-history-filters button.selected { background: #477ac1; border-color: #719bd6; }
+.mengbao-history-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); align-content: start;
+  grid-auto-rows: max-content;
+  gap: 16px; padding: 18px; overflow: auto; min-height: 0; flex: 1 1 0;
+}
+.mengbao-history-card { display: flex; flex-direction: column; align-self: start; background: #292929; border: 1px solid #454545; border-radius: 6px; overflow: hidden; min-width: 0; }
+.mengbao-history-card .mengbao-history-preview {
+  display: flex; align-items: center; justify-content: center; position: relative;
+  width: 100%; flex: 0 0 auto; aspect-ratio: 4 / 3; background: #181818; border: 0; border-radius: 0; padding: 0; overflow: hidden;
+}
+.mengbao-history-preview img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+.mengbao-history-preview > .pi { font-size: 36px; color: #999; }
+.mengbao-history-badge, .mengbao-history-image-count { position: absolute; padding: 4px 8px; border-radius: 4px; font-size: 12px; line-height: 1.4; }
+.mengbao-history-badge { right: 8px; top: 8px; background: #303b31; color: #acd4a6; }
+.mengbao-history-badge.running { background: #283950; color: #b1cbef; }
+.mengbao-history-badge.failed { background: #4d2929; color: #edabab; }
+.mengbao-history-badge.partial { background: #4b422c; color: #e6ce90; }
+.mengbao-history-image-count { right: 8px; bottom: 8px; background: rgba(25,25,25,.82); color: #eee; }
+.mengbao-history-info { padding: 12px; flex: 0 0 auto; display: flex; flex-direction: column; gap: 6px; }
+.mengbao-history-info strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mengbao-history-info time { font-size: 12px; color: #aaa; }
+.mengbao-history-info p { margin: 0; color: #bbb; font-size: 13px; line-height: 1.5; height: 39px; overflow: hidden; overflow-wrap: anywhere; }
+.mengbao-history-status { min-height: 20px; padding: 0 18px; flex: 0 0 auto; font-size: 12px; overflow-wrap: anywhere; }
+.mengbao-history-error { color: #f1aaaa; }
+.mengbao-history-dialog footer { border-top: 1px solid #3c3c3c; font-size: 13px; color: #bbb; }
+.mengbao-history-empty { grid-column: 1 / -1; padding: 70px 0; text-align: center; color: #aaa; }
+.mengbao-history-detail { width: 1000px; }
+.mengbao-history-detail-body { flex: 1 1 0; min-height: 0; overflow: auto; padding: 16px 18px; }
+.mengbao-history-original { width: 100%; height: 42vh; object-fit: contain; background: #181818; }
+.mengbao-history-original[hidden] { display: none; }
+.mengbao-history-thumbnails { display: flex; gap: 12px; overflow-x: auto; padding: 12px 0; }
+.mengbao-history-thumbnails > div { flex: 0 0 140px; display: flex; flex-direction: column; gap: 6px; }
+.mengbao-history-thumbnails button { width: 140px; height: 96px; padding: 0; overflow: hidden; }
+.mengbao-history-thumbnails img { width: 100%; height: 100%; object-fit: contain; }
+.mengbao-history-download { text-decoration: none; text-align: center; font-size: 12px; }
+.mengbao-history-detail h3 { font-size: 14px; margin: 14px 0 6px; }
+.mengbao-history-detail pre { white-space: pre-wrap; overflow-wrap: anywhere; font: 13px/1.6 Arial, "Microsoft YaHei", sans-serif; margin: 0; }
+@media (max-width: 550px) {
+  .mengbao-library-dock { flex-direction: row; right: 12px; bottom: 12px; }
+  .mengbao-history-dialog { max-width: calc(100vw - 16px); height: calc(100vh - 100px); margin: auto auto 82px; }
+  body:has(#mengbao-library-dock) .mengbao-material-dialog { max-width: calc(100vw - 16px); max-height: calc(100vh - 112px); margin: auto auto 82px; }
+  body:has(#mengbao-library-dock) .wang-prompt-panel { left: 8px; right: 8px; width: auto; bottom: 82px; height: calc(100vh - 98px); }
+  .mengbao-history-dialog header, .mengbao-history-dialog footer { padding: 10px 12px; }
+  .mengbao-history-dialog h2 { font-size: 18px; }
+  .mengbao-history-toolbar { padding: 10px 12px; gap: 8px; }
+  .mengbao-history-filters { padding: 0 12px 10px; gap: 6px; }
+  .mengbao-history-filters button { font-size: 12px; padding: 5px 8px; }
+  .mengbao-history-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); padding: 12px; gap: 10px; }
+}

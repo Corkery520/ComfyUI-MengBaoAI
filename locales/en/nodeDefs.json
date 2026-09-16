@@ -1,4 +1,22 @@
 {
+  "MengBaoImageReverse": {
+    "display_name": "MengBao AI · Image Reverse",
+    "description": "Analyze image composition and replaceable elements with GEM 3.7 flash and GEM 3.8 flash fallback.",
+    "inputs": { "image": { "name": "Source Image" }, "request_id": { "name": "Analysis Request" } },
+    "outputs": { "0": { "name": "Analysis" }, "1": { "name": "Reverse Prompt" } }
+  },
+  "MengBaoImageReplicaSettings": {
+    "display_name": "MengBao AI · Replica Settings",
+    "description": "Review element positions, edit copy and replace references before generating.",
+    "inputs": { "analysis": { "name": "Analysis" }, "draft_json": { "name": "Draft" }, "draft_id": { "name": "Draft ID" } },
+    "outputs": { "0": { "name": "Prompt" }, "1": { "name": "Replica Settings" } }
+  },
+  "MengBaoReplicaAudit": {
+    "display_name": "MengBao AI · Replica Audit",
+    "description": "Check missing, changed and residual text without discarding generated images.",
+    "inputs": { "images": { "name": "Images" }, "replica_settings": { "name": "Replica Settings" } },
+    "outputs": { "0": { "name": "Images" }, "1": { "name": "Report" } }
+  },
   "WANGImageAPI": {
     "display_name": "MengBao AI · Image Generation",
     "description": "Generate and edit images with TT Image and Nano Banana models in the MengBao AI node pack.",
@@ -7,6 +25,7 @@
       "connection_json": { "name": "Connection JSON" },
       "api_key": { "name": "API Key / Connection JSON" },
       "model_type": { "name": "Model" },
+      "replica_settings": { "name": "Replica Settings" },
       "batch_size": { "name": "Batch Size" },
       "tt2_size": { "name": "Legacy Size" },
       "tt2_aspect_ratio": { "name": "Aspect Ratio" },
@@ -101,21 +120,6 @@
       "2": { "name": "Column" }
     }
   },
-  "WANGLoadImageUploadPaste": {
-    "display_name": "MengBao AI · Load Image",
-    "description": "Load an image by file selection or Ctrl+V clipboard paste.",
-    "inputs": {
-      "image_data": { "name": "Image Data" },
-      "filename": { "name": "Filename" }
-    },
-    "outputs": {
-      "0": { "name": "Image" },
-      "1": { "name": "Mask" },
-      "2": { "name": "Filename" },
-      "3": { "name": "Width" },
-      "4": { "name": "Height" }
-    }
-  },
   "WANGPromptOrganizer": {
     "display_name": "MengBao AI · Prompt Organizer",
     "description": "Save, group, search, import, and export prompts.",
@@ -203,6 +207,30 @@
     "description": "Save or clear the global API Key used by MengBaoAI nodes.",
     "inputs": { "api_key": { "name": "API Key" } },
     "outputs": { "0": { "name": "Status" } }
+  },
+  "MengBaoLoadImage": {
+    "display_name": "MengBao AI · Load Image",
+    "description": "Upload, drop or paste an image with Ctrl+V, or load a saved material. Clearing the selection does not delete files.",
+    "inputs": { "image": { "name": "Image" } },
+    "outputs": { "0": { "name": "Image" }, "1": { "name": "Mask" } }
+  },
+  "MengBaoMaterialLibrary": {
+    "display_name": "MengBao AI · Material Library",
+    "description": "Import and organize images by category, search and favorites, then output the selected original image and mask.",
+    "inputs": { "material_id": { "name": "Material" } },
+    "outputs": { "0": { "name": "Image" }, "1": { "name": "Mask" } }
+  },
+  "MengBaoSaveImage": {
+    "display_name": "MengBao AI · Save Image",
+    "description": "Save images using native ComfyUI behavior and add the generation prompt with an image thumbnail to the prompt library.",
+    "inputs": { "images": { "name": "Images" }, "filename_prefix": { "name": "Filename Prefix" }, "generation_prompt": { "name": "Generation Prompt" } },
+    "outputs": {}
+  },
+  "MengBaoPreviewImage": {
+    "display_name": "MengBao AI · Preview Image",
+    "description": "Preview images using native ComfyUI behavior and add the generation prompt with an image thumbnail to the prompt library.",
+    "inputs": { "images": { "name": "Images" }, "generation_prompt": { "name": "Generation Prompt" } },
+    "outputs": {}
   },
   "MengBaoEcommerceSettings": {
     "display_name": "MengBao AI · E-commerce Settings",

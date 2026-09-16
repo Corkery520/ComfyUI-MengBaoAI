@@ -136,7 +136,7 @@ class EcommerceSettingsTests(unittest.TestCase):
         self.assertEqual(node_class.CATEGORY, "萌宝AI/电商")
         self.assertEqual(
             node_pack.NODE_DISPLAY_NAME_MAPPINGS["MengBaoEcommerceSettings"],
-            "MengBao AI电商设置",
+            "萌宝AI·电商设置",
         )
 
 

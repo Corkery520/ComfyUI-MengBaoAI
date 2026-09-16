@@ -109,6 +109,7 @@ const TRANSLATIONS = {
       ui_language: "UI Language",
     },
     inputs: {
+      replica_settings: "Replica Settings",
       image_1: "Reference Image 1",
       image_2: "Reference Image 2",
       image_3: "Reference Image 3",
@@ -182,6 +183,7 @@ const TRANSLATIONS = {
       ui_language: "界面语言",
     },
     inputs: {
+      replica_settings: "复刻设置",
       image_1: "参考图 1",
       image_2: "参考图 2",
       image_3: "参考图 3",

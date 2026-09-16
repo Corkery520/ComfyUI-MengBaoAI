@@ -4,6 +4,7 @@ const API_ROOT = "/wang_prompt_organizer";
 const COLORS = ["#e25545", "#d33b6a", "#8f3db4", "#6647b8", "#4d5fbc", "#5596e6", "#4e9b8f", "#6dad5f", "#f0a23a", "#806454"];
 
 const T = {
+  library: "\u840c\u5b9dAI\u00b7\u63d0\u793a\u8bcd\u5e93",
   fab: "\u8bcd",
   manager: "\u840c\u5b9dAI\u00b7\u63d0\u793a\u8bcd\u6574\u7406\u5668",
   refresh: "\u5237\u65b0",
@@ -44,6 +45,8 @@ const T = {
   exported: "\u5df2\u5bfc\u51fa JSON",
   created: "\u5df2\u6dfb\u52a0",
   saved: "\u5df2\u4fdd\u5b58",
+  saving: "\u6b63\u5728\u4fdd\u5b58...",
+  replaceDraft: "\u5f53\u524d\u8868\u5355\u6709\u672a\u4fdd\u5b58\u5185\u5bb9\uff0c\u662f\u5426\u66ff\u6362\u4e3a\u8fd9\u5f20\u56fe\u7247\u7684\u63d0\u793a\u8bcd\uff1f",
   groupSaved: "\u5206\u7ec4\u5df2\u6dfb\u52a0",
   noGroupName: "\u8bf7\u8f93\u5165\u5206\u7ec4\u540d\u79f0",
   noSelection: "\u8bf7\u5148\u9009\u62e9\u8981\u79fb\u52a8\u7684\u63d0\u793a\u8bcd",
@@ -60,6 +63,7 @@ const T = {
 
 const ZH_TEXT = { ...T };
 const EN_TEXT = {
+  library: "MengBao AI · Prompt Library",
   fab: "P",
   manager: "MengBao AI Prompt Organizer",
   refresh: "Refresh",
@@ -100,6 +104,8 @@ const EN_TEXT = {
   exported: "Exported JSON",
   created: "Added",
   saved: "Saved",
+  saving: "Saving...",
+  replaceDraft: "The current form has unsaved changes. Replace it with this image's prompt?",
   groupSaved: "Group added",
   noGroupName: "Enter a group name",
   noSelection: "Select prompts to move first",
@@ -133,6 +139,8 @@ const state = {
   selectedIds: new Set(),
   selectedColor: COLORS[0],
   previewImage: "",
+  imageDraftOpen: false,
+  saving: false,
   filterGroup: "all",
   query: "",
   pasteTarget: "",
@@ -217,7 +225,7 @@ function injectStyle() {
       .wang-prompt-lightbox{position:fixed;inset:0;z-index:100001;background:rgba(0,0,0,.82);display:flex;align-items:center;justify-content:center;padding:28px;box-sizing:border-box;cursor:zoom-out}
       .wang-prompt-lightbox img{max-width:100%;max-height:100%;object-fit:contain;border-radius:6px;box-shadow:0 16px 60px rgba(0,0,0,.6)}
       .wang-prompt-file{display:none}
-      @media (max-width:720px){.wang-prompt-panel{right:8px;bottom:8px;width:calc(100vw - 16px);height:calc(100vh - 16px)}.wang-prompt-body{grid-template-columns:1fr}.wang-prompt-side{border-right:0;border-bottom:1px solid #353535;max-height:260px}.wang-prompt-row,.wang-prompt-import{grid-template-columns:1fr}.wang-prompt-title{font-size:17px}}
+      @media (max-width:720px){.wang-prompt-panel{left:8px;right:8px;bottom:8px;width:auto;height:calc(100vh - 16px)}.wang-prompt-body{display:block;overflow:auto}.wang-prompt-side{border-right:0;border-bottom:1px solid #353535}.wang-prompt-main{overflow:visible}.wang-prompt-list{max-height:160px}.wang-prompt-row{grid-template-columns:1fr}.wang-prompt-title{font-size:17px}}
     `,
   }));
 }
@@ -327,6 +335,7 @@ function renderList() {
       tabindex: "0",
       style: `--wang-color:${color}`,
       onclick: () => {
+        state.imageDraftOpen = false;
         state.selectedId = item.id;
         fillForm(item);
         renderList();
@@ -387,16 +396,19 @@ function render() {
 async function refresh() {
   const params = new URLSearchParams({ group: state.filterGroup || "all", query: state.query || "" });
   const data = await api(`/prompts?${params.toString()}`);
+  const draft = state.open && state.imageDraftOpen ? captureDraft() : null;
   state.prompts = data.prompts || [];
   state.groups = data.groups || ["default"];
   const visibleIds = new Set(state.prompts.map((item) => item.id));
   state.selectedIds = new Set([...state.selectedIds].filter((id) => visibleIds.has(id)));
-  if (!state.prompts.some((item) => item.id === state.selectedId)) state.selectedId = state.prompts[0]?.id || "";
+  if (!state.imageDraftOpen && !state.prompts.some((item) => item.id === state.selectedId)) state.selectedId = state.prompts[0]?.id || "";
   render();
+  if (draft) restoreDraft(draft);
 }
 
 async function refreshAndNewPrompt() {
   await refresh();
+  state.imageDraftOpen = false;
   state.selectedId = "";
   fillForm();
   status(T.newPrompt);
@@ -407,7 +419,7 @@ function buildPanel() {
   const previewInput = el("input", { class: "wang-prompt-preview-input", type: "file", accept: "image/*", onchange: onPreviewFile });
   return el("section", { class: "wang-prompt-panel", id: "wang-prompt-panel" }, [
     el("header", { class: "wang-prompt-head" }, [
-      el("div", { class: "wang-prompt-title", text: T.manager }),
+      el("div", { class: "wang-prompt-title", text: T.library }),
       el("button", { class: "wang-prompt-icon", title: T.add, text: "\u21bb", onclick: () => refreshAndNewPrompt().catch((err) => status(err.message)) }),
       el("button", { class: "wang-prompt-icon", title: T.close, text: "\u00d7", onclick: closePanel }),
     ]),
@@ -459,7 +471,7 @@ function buildPanel() {
             el("span", { class: "wang-prompt-status", id: "wang-prompt-status" }),
             el("button", { class: "wang-prompt-btn", type: "button", text: T.delete, onclick: onDelete }),
             el("button", { class: "wang-prompt-btn", type: "button", text: T.copy, onclick: onCopy }),
-            el("button", { class: "wang-prompt-btn primary", type: "submit", text: T.save }),
+            el("button", { class: "wang-prompt-btn primary", type: "submit", disabled: state.saving ? "disabled" : null, text: state.saving ? T.saving : T.save }),
           ]),
           previewInput,
           el("div", {
@@ -495,12 +507,17 @@ function openPanel() {
 
 function closePanel() {
   state.open = false;
+  state.imageDraftOpen = false;
   document.getElementById("wang-prompt-panel")?.remove();
   ensureFab();
 }
 
 function ensureFab() {
   injectStyle();
+  if (document.getElementById("mengbao-library-dock")) {
+    document.getElementById("wang-prompt-fab")?.remove();
+    return;
+  }
   if (document.getElementById("wang-prompt-fab") || state.open) return;
   document.body.appendChild(el("button", { id: "wang-prompt-fab", class: "wang-prompt-fab", title: T.manager, text: T.fab, onclick: openPanel }));
 }
@@ -580,24 +597,60 @@ function toggleEditMode() {
 
 async function onSave(event) {
   event.preventDefault();
+  if (state.saving) return;
   const form = event.currentTarget;
   const data = Object.fromEntries(new FormData(form).entries());
-  const result = await api("/prompt", {
-    method: "POST",
-    body: JSON.stringify({
-      id: form.dataset.id || "",
-      title: data.title,
-      group: storeGroup(data.group),
-      prompt: data.prompt,
-      tags: data.tags,
-      note: data.note,
-      color: state.selectedColor,
-      preview_image: state.previewImage,
-    }),
-  });
-  state.selectedId = result.prompt?.id || state.selectedId;
-  status(result.status === "created" ? T.created : T.saved);
-  await refresh();
+  state.saving = true;
+  renderSaveButton();
+  try {
+    const result = await api("/prompt", {
+      method: "POST",
+      body: JSON.stringify({
+        id: form.dataset.id || "",
+        title: data.title,
+        group: storeGroup(data.group),
+        prompt: data.prompt,
+        tags: data.tags,
+        note: data.note,
+        color: state.selectedColor,
+        preview_image: state.previewImage,
+      }),
+    });
+    state.imageDraftOpen = false;
+    state.selectedId = result.prompt?.id || state.selectedId;
+    await refresh();
+    status(result.status === "created" ? T.created : T.saved);
+  } catch (error) { status(error.message); }
+  finally { state.saving = false; renderSaveButton(); }
+}
+
+function renderSaveButton() {
+  const button = document.querySelector('#wang-prompt-form button[type="submit"]');
+  if (!button) return;
+  button.disabled = state.saving;
+  button.textContent = state.saving ? T.saving : T.save;
+}
+
+function hasUnsavedPromptDraft(draft, saved) {
+  if (!draft) return false;
+  if (!saved) return Boolean(draft.values?.title || draft.values?.prompt || draft.previewImage);
+  const expected = { title: saved.title || "", group: saved.group || "default", prompt: saved.prompt || "", tags: (saved.tags || []).join(", "), note: saved.note || "" };
+  return Object.entries(expected).some(([name, value]) => (draft.values?.[name] || "") !== value)
+    || draft.previewImage !== (saved.preview_image || "") || draft.color !== (saved.color || COLORS[0]);
+}
+
+function openPromptDraft(draft) {
+  if (state.saving) return false;
+  Object.assign(T, currentLanguage() === "zh" ? ZH_TEXT : EN_TEXT);
+  if (state.open && hasUnsavedPromptDraft(captureDraft(), selectedPrompt()) && !window.confirm(T.replaceDraft)) return false;
+  state.imageDraftOpen = true;
+  state.selectedId = "";
+  injectStyle();
+  openPanel();
+  renderFilters();
+  fillForm({ ...draft, group: draft.group || "default" });
+  status(T.newPrompt);
+  return true;
 }
 
 async function onDelete() {
@@ -756,6 +809,7 @@ function installNodeButtons(nodeType, nodeData) {
     const addButton = this.addWidget?.("button", T.add, null, () => {
       openPanel();
       setTimeout(() => {
+        state.imageDraftOpen = false;
         state.selectedId = "";
         fillForm();
         status(T.newPrompt);
@@ -787,3 +841,6 @@ app.registerExtension({
 
 window.WANGPromptOrganizerOpen = openPanel;
 window.MengBaoPromptOrganizerOpen = openPanel;
+window.MengBaoPromptOrganizerDraft = openPromptDraft;
+
+export { hasUnsavedPromptDraft, openPromptDraft };

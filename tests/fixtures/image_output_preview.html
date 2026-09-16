@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="zh">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>保存与预览节点隔离测试</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 20px; background: #222426; color: #eee; font: 14px Arial, sans-serif; }
+    body > header { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 24px; }
+    body > header select, body > header button { background: #36393d; border: 1px solid #626970; border-radius: 4px; color: #eee; padding: 8px; }
+    main { display: flex; flex-wrap: wrap; gap: 24px; }
+    .test-node { width: 380px; max-width: 100%; background: #303236; border: 1px solid #686b70; border-radius: 8px; overflow: hidden; }
+    .test-node h2 { background: #383a3e; font-size: 19px; padding: 14px; margin: 0; }
+    .test-port { padding: 8px 14px; }
+    .test-controls { padding: 10px 14px; }
+  </style>
+</head>
+<body>
+  <header>
+    <select id="locale" aria-label="语言"><option value="zh-CN">中文</option><option value="en">English</option><option value="fr">Français</option></select>
+    <select id="sources" aria-label="测试提示词来源"><option value="one">单一来源</option><option value="many">多个来源</option><option value="none">未关联提示词</option></select>
+    <button id="execute">模拟生成结果</button>
+    <button id="clear">清空测试结果</button>
+  </header>
+  <main></main>
+  <script type="module">
+    import { app } from "/scripts/app.js";
+    import "/extensions/mengbao/js/image_output.js";
+    import "/extensions/mengbao/js/prompt_organizer.js";
+    class TestNode {
+      constructor(type) {
+        this.type = type; this.widgets = []; this.inputs = [{ name: "images" }, { name: "generation_prompt" }]; this.size = [380, 420];
+        this.section = document.createElement("section"); this.section.className = "test-node";
+        this.titleElement = document.createElement("h2");
+        this.port = document.createElement("div"); this.port.className = "test-port";
+        this.controls = document.createElement("div"); this.controls.className = "test-controls";
+        this.section.append(this.titleElement, this.port, this.controls); document.querySelector("main").append(this.section);
+      }
+      onExecuted(message) { this.nativeMessage = message; }
+      addDOMWidget(name, type, root) { this.controls.append(root); }
+      computeSize() { return [380, 420]; }
+      setSize() {}
+      setDirtyCanvas() { this.titleElement.textContent = this.title; this.port.textContent = this.inputs.map((input) => input.label || input.name).join(" / "); }
+    }
+    const outputs = [];
+    for (const type of ["MengBaoSaveImage", "MengBaoPreviewImage"]) {
+      class Node extends TestNode {}
+      for (const extension of app.extensions) await extension.beforeRegisterNodeDef?.(Node, { name: type });
+      const node = new Node(type); app.graph._nodes.push(node); node.onNodeCreated(); outputs.push(node);
+    }
+    for (const extension of app.extensions) await extension.setup?.();
+    document.querySelector("#locale").addEventListener("change", () => app.ui.settings.settingsLookup["Comfy.Locale"].onChange());
+    document.querySelector("#execute").addEventListener("click", () => {
+      const type = document.querySelector("#sources").value;
+      const candidates = type === "none" ? [] : [{ node_id: "1", class_type: "WANGImageAPI", text: "A product on a clean studio background\nPreserve original branding and proportions." }];
+      if (type === "many") candidates.push({ node_id: "2", class_type: "WANGImageAPI", text: "A second product with natural lighting" });
+      for (const node of outputs) node.onExecuted({ images: ["preview.png", "second.png"].map((filename) => ({ filename, subfolder: "", type: node.type === "MengBaoSaveImage" ? "output" : "temp" })), mengbao_prompt_candidates: candidates });
+    });
+    document.querySelector("#clear").addEventListener("click", () => { for (const node of outputs) node.onExecuted({ images: [] }); });
+  </script>
+</body>
+</html>

@@ -3,6 +3,9 @@ from typing import Any, Dict, List, Optional
 import torch
 
 from ...api import image_client
+from ...utils.history_store import HISTORY_STORE
+from ...utils.replica import nearest_ratio
+from ...utils.replica_store import REPLICA_STORE
 from ...api.auth import (
     connection_key as _connection_key,
     mask_key as _mask_key,
@@ -228,6 +231,19 @@ def _build_model_params(
     }
 
 
+def _finish_history(history_id, images, error):
+    if not history_id:
+        return
+    try:
+        # 只归档实际返回的原图，不把生成失败说明图当成成功图片。
+        HISTORY_STORE.finish(history_id, (
+            _image_tensor_to_png_bytes(frame, force_rgba=False)
+            for image in images for frame in image
+        ), error)
+    except Exception as exc:
+        print(f"[MengBao AI] History images could not be saved: {exc}")
+
+
 class MengBaoImageAPI:
     @classmethod
     def INPUT_TYPES(cls):
@@ -315,8 +331,11 @@ class MengBaoImageAPI:
                 "ui_language": (["en", "zh"], {"default": "en"}),
             },
             "optional": {
-                f"image_{index}": ("IMAGE",)
-                for index in range(1, MAX_REFERENCE_IMAGE_COUNT + 1)
+                **{
+                    f"image_{index}": ("IMAGE",)
+                    for index in range(1, MAX_REFERENCE_IMAGE_COUNT + 1)
+                },
+                "replica_settings": ("MENGBAO_REPLICA_SETTINGS",),
             },
         }
 
@@ -376,6 +395,7 @@ class MengBaoImageAPI:
         image_3: Optional[torch.Tensor] = None,
         image_4: Optional[torch.Tensor] = None,
         image_5: Optional[torch.Tensor] = None,
+        replica_settings: Optional[Dict[str, Any]] = None,
         **additional_images: Optional[torch.Tensor],
     ):
         api_key = _connection_key(connection_json, api_key)
@@ -393,10 +413,39 @@ class MengBaoImageAPI:
                 MAX_REFERENCE_IMAGE_COUNT + 1,
             )
         )
-        reference_images = _optional_images(
-            image_inputs,
-            limit=int(config["max_images"]),
-        )
+        replica_notice = None
+        if replica_settings is not None:
+            if any(image is not None for image in image_inputs):
+                raise ValueError("Replica Settings cannot be combined with ordinary reference image inputs")
+            references = replica_settings.get("references", [])
+            if not references or references[0] != replica_settings.get("source", {}).get("id"):
+                raise ValueError("Replica source must be reference image 1")
+            if len(references) > int(config["max_images"]):
+                raise ValueError(f"{model_type} supports at most {config['max_images']} reference images; replica requires {len(references)}")
+            reference_images = [REPLICA_STORE.asset_bytes(asset_id) for asset_id in references]
+            source = replica_settings["source"]
+            options = {"tt-image-2": TT_IMAGE_2_ASPECT_RATIOS, "tt-image-2.5": TT_IMAGE_25_ASPECT_RATIOS,
+                       "banana-2": BANANA_2_ASPECT_RATIOS, "banana-pro": BANANA_PRO_ASPECT_RATIOS}[config["family"]]
+            ratio = nearest_ratio(source, options)
+            replica_notice = {"ratio": ratio, "source_width": source["width"], "source_height": source["height"], "auto_resolution_mapped": False}
+            if config["family"] == "tt-image-2":
+                tt2_aspect_ratio = ratio
+                # 该模型只接受固定像素尺寸；自动分辨率沿用平台的基础 1K 档。
+                if tt2_resolution == "auto":
+                    tt2_resolution = "1K"
+                    replica_notice["auto_resolution_mapped"] = True
+            elif config["family"] == "tt-image-2.5":
+                tt25_aspect_ratio = ratio
+                # 固定比例不能搭配自动分辨率；复刻模式保持原图比例，按基础档落实自动值。
+                if tt25_resolution == "auto":
+                    tt25_resolution = "1K"
+                    replica_notice["auto_resolution_mapped"] = True
+            elif config["family"] == "banana-2":
+                banana2_aspect_ratio = ratio
+            else:
+                banana_pro_aspect_ratio = ratio
+        else:
+            reference_images = _optional_images(image_inputs, limit=int(config["max_images"]))
         model_params = _build_model_params(
             model_type,
             tt2_size,
@@ -415,6 +464,8 @@ class MengBaoImageAPI:
             tt2_resolution=tt2_resolution,
             tt2_background=tt2_background,
         )
+        if replica_notice:
+            prompt = f"{prompt.rstrip()}\n\n画布比例使用 {replica_notice['ratio']}，保持原参考图的构图与视觉层级。"
         request_prompt = _augment_prompt_for_transparency(
             prompt,
             model_type,
@@ -428,6 +479,12 @@ class MengBaoImageAPI:
         failed_urls: List[str] = []
         batch_count = int(batch_size)
         progress_total = max(1, batch_count) * 100
+        history_id = None
+        history_errors = []
+        try:
+            history_id = HISTORY_STORE.start(model_type, request_prompt, model_params, batch_count)
+        except Exception as exc:
+            print(f"[MengBao AI] History could not be started: {exc}")
         progress_bar = (
             ComfyProgressBar(progress_total)
             if ComfyProgressBar is not None
@@ -435,10 +492,14 @@ class MengBaoImageAPI:
         )
         for batch_index in range(batch_count):
             def update_batch_progress(percent: int) -> None:
-                if progress_bar is None:
-                    return
                 absolute = batch_index * 100 + max(0, min(100, int(percent)))
-                progress_bar.update_absolute(absolute, progress_total)
+                if progress_bar is not None:
+                    progress_bar.update_absolute(absolute, progress_total)
+                if history_id:
+                    try:
+                        HISTORY_STORE.progress(history_id, absolute * 100 // progress_total)
+                    except Exception as exc:
+                        print(f"[MengBao AI] History progress could not be saved: {exc}")
 
             update_batch_progress(1)
             try:
@@ -465,20 +526,30 @@ class MengBaoImageAPI:
                 }
 
             payloads.append(payload)
-            images, failed = _extract_images(
-                payload,
-                int(timeout),
-                int(retries),
-            )
+            try:
+                images, failed = _extract_images(
+                    payload,
+                    int(timeout),
+                    int(retries),
+                )
+            except BaseException as exc:
+                _finish_history(history_id, all_images, str(exc).replace(api_key, "[REDACTED]") or "Generation interrupted")
+                raise
             all_images.extend(images)
             failed_urls.extend(failed)
+            if failed or not images:
+                error = payload.get("error", {}) if isinstance(payload, dict) else {}
+                message = error.get("message") or error.get("reason") if isinstance(error, dict) else str(error)
+                history_errors.append(str(message or "No image returned or image download failed").replace(api_key, "[REDACTED]"))
             if not images:
                 print(f"[MengBao AI] No image returned. {_json_text(payload)}")
             update_batch_progress(100)
 
+        _finish_history(history_id, all_images, "\n".join(history_errors))
+
         text = "\n\n".join(_json_text(payload) for payload in payloads)
         return {
-            "ui": {"mengbao_balance_refresh": [True]},
+            "ui": {"mengbao_balance_refresh": [True], **({"mengbao_replica_ratio": [replica_notice]} if replica_notice else {})},
             "result": (
                 _cat_images(
                     all_images,

@@ -63,13 +63,19 @@ class MengBaoImageAPITests(unittest.TestCase):
             "ImageGridSplit",
             "ImageFreeCrop",
             "ImageGridTilePicker",
-            "WANGLoadImageUploadPaste",
             "WANGPromptOrganizer",
             "WANGPromptReader",
             "MengBaoEcommerceSettings",
             "MengBaoSmartCollage",
             "MengBaoImageConstraint",
+            "MengBaoLoadImage",
+            "MengBaoMaterialLibrary",
+            "MengBaoSaveImage",
+            "MengBaoPreviewImage",
             "MengBaoGlobalAPIKey",
+            "MengBaoImageReverse",
+            "MengBaoImageReplicaSettings",
+            "MengBaoReplicaAudit",
         }
         self.assertEqual(set(node_pack.NODE_CLASS_MAPPINGS), expected_ids)
         self.assertEqual(
@@ -178,7 +184,7 @@ class MengBaoImageAPITests(unittest.TestCase):
         optional_inputs = node_module.MengBaoImageAPI.INPUT_TYPES()["optional"]
         self.assertEqual(
             list(optional_inputs),
-            [f"image_{index}" for index in range(1, 17)],
+            [f"image_{index}" for index in range(1, 17)] + ["replica_settings"],
         )
 
         encoded = base64.b64encode(self._png_bytes()).decode("ascii")
@@ -422,7 +428,7 @@ class MengBaoImageAPITests(unittest.TestCase):
                 "MengBaoAI Grid Tile Picker",
                 "萌宝AI 网格选图",
             ),
-            "WANGLoadImageUploadPaste": (
+            "MengBaoLoadImage": (
                 "MengBaoAI Load Image",
                 "萌宝AI 加载图片",
             ),

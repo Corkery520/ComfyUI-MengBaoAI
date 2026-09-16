@@ -1,0 +1,49 @@
+name: Node pack checks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate (${{ matrix.os }}, Python ${{ matrix.python }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            python: "3.12"
+          - os: windows-latest
+            python: "3.10"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install test dependencies
+        shell: bash
+        run: |
+          python -m pip install --disable-pip-version-check -r requirements.txt aiohttp tomli
+          python -m pip install --disable-pip-version-check --index-url https://download.pytorch.org/whl/cpu torch
+      - name: Validate Registry archive and all node definitions
+        run: python tests/check_registry_package.py
+      - name: Run Python tests and compilation
+        shell: bash
+        run: |
+          python -m unittest discover -s tests -v
+          python -m compileall -q __init__.py api nodes utils tests
+      - name: Run JavaScript tests and module syntax checks
+        shell: bash
+        run: |
+          node --test tests/*.mjs
+          for file in web/js/*.js; do node --input-type=module --check < "$file"; done
