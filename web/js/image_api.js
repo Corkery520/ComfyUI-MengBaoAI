@@ -555,12 +555,17 @@ async function hasSavedApiKey(node) {
   if (typeof node._mengBaoHasSavedApiKey === "boolean") {
     return node._mengBaoHasSavedApiKey;
   }
+  const keyVersion = node._mengBaoGlobalKeyVersion || 0;
   try {
     const response = await api.fetchApi("/mengbao_image_api/api_key");
     const payload = await response.json();
-    node._mengBaoHasSavedApiKey = Boolean(response.ok && payload?.saved);
+    if (keyVersion === (node._mengBaoGlobalKeyVersion || 0)) {
+      node._mengBaoHasSavedApiKey = Boolean(response.ok && payload?.saved);
+    }
   } catch {
-    node._mengBaoHasSavedApiKey = false;
+    if (keyVersion === (node._mengBaoGlobalKeyVersion || 0)) {
+      node._mengBaoHasSavedApiKey = false;
+    }
   }
   return node._mengBaoHasSavedApiKey;
 }
@@ -598,6 +603,7 @@ async function saveApiKey(node) {
     }
     node._mengBaoHasSavedApiKey = true;
     node._mengBaoApiKeySaveState = "saved";
+    api.dispatchEvent?.(new CustomEvent("mengbao-api-key-changed", { detail: { saved: true } }));
     window.alert(labels.saved);
     await refreshBalance(node);
   } catch (error) {
@@ -640,7 +646,10 @@ function renderAccountControls(node) {
 async function refreshBalance(node, { silent = false } = {}) {
   const language = normalizeLanguage(node._mengBaoLanguage || currentLanguage());
   const labels = TRANSLATIONS[language].account;
-  if (!extractApiKey(node) && !(await hasSavedApiKey(node))) {
+  const sequence = node._mengBaoBalanceRequestSequence || 0;
+  const canRefresh = Boolean(extractApiKey(node)) || (await hasSavedApiKey(node));
+  if (sequence !== (node._mengBaoBalanceRequestSequence || 0)) return;
+  if (!canRefresh) {
     node._mengBaoBalanceState = { kind: "error", value: labels.apiKeyRequired };
     renderAccountControls(node);
     if (!silent) {
@@ -672,8 +681,10 @@ async function refreshBalance(node, { silent = false } = {}) {
     if (!response.ok || payload?.error) {
       throw new Error(balanceErrorMessage(payload, response));
     }
+    if (sequence !== (node._mengBaoBalanceRequestSequence || 0)) return;
     node._mengBaoBalanceState = { kind: "value", value: formatBalance(payload) };
   } catch (error) {
+    if (sequence !== (node._mengBaoBalanceRequestSequence || 0)) return;
     const message = error instanceof Error ? error.message : String(error);
     node._mengBaoBalanceState = { kind: "error", value: message };
     if (!silent) {
@@ -1047,11 +1058,31 @@ function installExecutionBalanceListener() {
   });
 }
 
+function installGlobalApiKeyBalanceListener() {
+  if (typeof api.addEventListener !== "function" || api._mengBaoGlobalKeyBalanceListenerInstalled) return;
+  api._mengBaoGlobalKeyBalanceListenerInstalled = true;
+  api.addEventListener("mengbao-api-key-changed", ({ detail }) => {
+    if (typeof detail?.saved !== "boolean") return;
+    for (const node of app.graph?._nodes || []) {
+      if (!isMengBaoNode(node)) continue;
+      node._mengBaoGlobalKeyVersion = (node._mengBaoGlobalKeyVersion || 0) + 1;
+      node._mengBaoHasSavedApiKey = detail.saved;
+      if (extractApiKey(node)) continue;
+      // 清除密钥时让旧余额请求失效，防止已清空的状态被迟到响应覆盖。
+      node._mengBaoBalanceRequestSequence = (node._mengBaoBalanceRequestSequence || 0) + 1;
+      node._mengBaoBalanceState = { kind: "empty", value: "" };
+      renderAccountControls(node);
+      if (detail.saved) refreshBalance(node, { silent: true });
+    }
+  });
+}
+
 app.registerExtension({
   name: "MengBao.image_api_nodes.localization.v4",
   async setup() {
     installLocaleListener();
     installExecutionBalanceListener();
+    installGlobalApiKeyBalanceListener();
     setTimeout(localizeExistingNodes, 0);
   },
   async beforeRegisterNodeDef(nodeType, nodeData) {

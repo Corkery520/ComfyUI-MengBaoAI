@@ -69,6 +69,7 @@ class MengBaoImageAPITests(unittest.TestCase):
             "MengBaoEcommerceSettings",
             "MengBaoSmartCollage",
             "MengBaoImageConstraint",
+            "MengBaoGlobalAPIKey",
         }
         self.assertEqual(set(node_pack.NODE_CLASS_MAPPINGS), expected_ids)
         self.assertEqual(

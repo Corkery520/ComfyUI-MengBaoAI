@@ -2,6 +2,12 @@ import { app } from "../../../scripts/app.js";
 
 const NODE_LABELS = {
   en: {
+    MengBaoGlobalAPIKey: {
+      title: "MengBao AI · Global API Key Manager",
+      widgets: { api_key: "API Key" },
+      inputs: { api_key: "API Key" },
+      outputs: ["Status"],
+    },
     ImageGridSplit: {
       title: "MengBao AI · Image Split",
       widgets: {
@@ -151,6 +157,12 @@ const NODE_LABELS = {
     },
   },
   zh: {
+    MengBaoGlobalAPIKey: {
+      title: "萌宝全局API Key管理",
+      widgets: { api_key: "API 密钥" },
+      inputs: { api_key: "API 密钥" },
+      outputs: ["状态"],
+    },
     ImageGridSplit: {
       title: "萌宝AI·图片拆分",
       widgets: {
@@ -394,6 +406,7 @@ function applyNodeLocalization(node, language = currentLanguage()) {
     }
   }
   node._mengBaoCollageControls?.render(normalizedLanguage);
+  node._mengBaoGlobalKeyControls?.render(normalizedLanguage);
   node.setDirtyCanvas?.(true, true);
 }
 

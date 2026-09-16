@@ -197,6 +197,12 @@
       "0": { "name": "Image" }
     }
   },
+  "MengBaoGlobalAPIKey": {
+    "display_name": "MengBao AI · Global API Key Manager",
+    "description": "Save or clear the global API Key used by MengBaoAI nodes.",
+    "inputs": { "api_key": { "name": "API Key" } },
+    "outputs": { "0": { "name": "Status" } }
+  },
   "MengBaoEcommerceSettings": {
     "display_name": "MengBao AI · E-commerce Settings",
     "description": "Configure product details and e-commerce image parameters, then output a reusable prompt and JSON settings.",

@@ -21,6 +21,7 @@
 | `MengBaoEcommerceSettings` | MengBao AI电商设置 | 组合产品信息、电商参数、提示词和结构化 JSON |
 | `MengBaoSmartCollage` | 萌宝AI智能拼图 | 默认 4 个图片端口，可添加至 20 个，自动等比无间距拼接 |
 | `MengBaoImageConstraint` | 萌宝图像约束 | 保持宽高比限制图片尺寸，必要时居中裁剪 |
+| `MengBaoGlobalAPIKey` | 萌宝全局API Key管理 | 通过一个密钥输入框保存或清除全局 API Key |
 
 带有 `WANG` 的历史内部 ID 为兼容旧工作流而保留。中英文显示名会跟随 ComfyUI 的 `Comfy.Locale` 实时切换。
 
@@ -36,6 +37,12 @@
 | `nano-banana-2-pro` | `banana-pro` | 14 |
 
 图像 API 使用固定服务地址 `https://api.lk888.ai`。默认模型为 `gpt-image-2`，比例与分辨率默认为自动，超时时间为 600 秒。节点支持任务进度、动态参考图、透明 PNG 提示词、余额自动刷新及 API Key 本地保存。
+
+## 全局 API Key
+
+“萌宝全局API Key管理”节点提供一个密码输入框，以及“保存全局API Key”和“清除全局API Key”按钮。密钥保存到 `ComfyUI/user/mengbaoai/.env`，不写入工作流或状态输出。
+
+图像节点单独填写的 API Key 优先使用；留空时使用全局密钥。全局密钥保存后，使用它的图像节点会自动刷新余额。清除操作需要确认，保留其他环境配置，并阻止旧安装目录的密钥被再次迁移回来。运行管理节点只读取状态，不会隐式保存或清除密钥。
 
 ## 安装
 
@@ -99,7 +106,8 @@ ComfyUI-MengBaoAI/
 │   ├── image_tools/collage.py
 │   ├── image_tools/constraint.py
 │   ├── prompt/organizer.py
-│   └── ecommerce/settings.py
+│   ├── ecommerce/settings.py
+│   └── tools/global_api_key.py
 ├── api/
 │   ├── auth.py
 │   ├── image_client.py
@@ -126,6 +134,7 @@ node --check web/js/load_image.js
 node --check web/js/node_localization.js
 node --check web/js/prompt_organizer.js
 node --check web/js/smart_collage.js
+node --check web/js/global_api_key.js
 ```
 
 ## 安全说明

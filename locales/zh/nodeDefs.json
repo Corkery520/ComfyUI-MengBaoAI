@@ -197,6 +197,12 @@
       "0": { "name": "图像" }
     }
   },
+  "MengBaoGlobalAPIKey": {
+    "display_name": "萌宝全局API Key管理",
+    "description": "统一保存或清除萌宝AI节点使用的全局API Key。",
+    "inputs": { "api_key": { "name": "API 密钥" } },
+    "outputs": { "0": { "name": "状态" } }
+  },
   "MengBaoEcommerceSettings": {
     "display_name": "MengBao AI电商设置",
     "description": "集中配置产品信息与电商图片参数，输出可复用的提示词和 JSON 设置。",

@@ -20,6 +20,10 @@ All notable changes to this project are documented in this file.
   add/remove image buttons, retaining four sockets by default and supporting up to twenty.
 - Added `MengBaoImageConstraint` for aspect-preserving size limits and optional
   center cropping when minimum and maximum constraints conflict.
+- Added `MengBaoGlobalAPIKey` with a password input and explicit save/clear buttons,
+  shared user-directory storage, safe status output, and automatic balance updates.
+- Added safe key clearing that preserves unrelated settings and prevents legacy
+  key migration from restoring a deliberately cleared key.
 
 ### Changed
 

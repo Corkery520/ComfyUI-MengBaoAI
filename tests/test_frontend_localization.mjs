@@ -435,4 +435,28 @@ await waitForUpdates();
 assert.equal(automaticBalanceRequests, 1);
 assert.deepEqual(liveNode._mengBaoBalanceState, { kind: "value", value: "12 CNY" });
 
+const globalKeyNode = makeNode();
+globalKeyNode._mengBaoHasSavedApiKey = false;
+globalThis.__mengBaoTestApp.graph._nodes = [globalKeyNode, liveNode];
+apiEventListeners["mengbao-api-key-changed"]({ detail: { saved: true } });
+await waitForUpdates();
+assert.equal(globalKeyNode._mengBaoHasSavedApiKey, true);
+assert.deepEqual(globalKeyNode._mengBaoBalanceState, { kind: "value", value: "12 CNY" });
+let resolveBalance;
+let requestStarted;
+const started = new Promise((resolve) => { requestStarted = resolve; });
+globalThis.__mengBaoTestApi.fetchApi = () => new Promise((resolve) => {
+  resolveBalance = resolve;
+  requestStarted();
+});
+const pendingBalance = localization.refreshBalance(globalKeyNode, { silent: true });
+await started;
+apiEventListeners["mengbao-api-key-changed"]({ detail: { saved: false } });
+resolveBalance({ ok: true, json: async () => ({ data: { balance: 99, currency: "CNY" } }) });
+await pendingBalance;
+assert.equal(globalKeyNode._mengBaoHasSavedApiKey, false);
+assert.deepEqual(globalKeyNode._mengBaoBalanceState, { kind: "empty", value: "" });
+assert.deepEqual(liveNode._mengBaoBalanceState, { kind: "value", value: "12 CNY" });
+assert.equal(widget(liveNode, "api_key").value, "execution-key");
+
 console.log("Frontend localization tests passed.");

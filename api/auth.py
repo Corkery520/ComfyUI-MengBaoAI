@@ -1,14 +1,16 @@
 import asyncio
 import json
 import os
+import threading
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 
 from .image_client import fetch_balance
 
 
 PLUGIN_ROOT = Path(__file__).resolve().parents[1]
 ENV_API_KEY_NAME = "MENGBAO_API_KEY"
+_KEY_STORE_LOCK = threading.RLock()
 
 
 def _user_data_directory() -> Path:
@@ -56,9 +58,9 @@ def provided_connection_key(connection_json: str, api_key: str) -> str:
     return json_connection_key(connection_json)
 
 
-def _read_key_from_path(path: Path) -> str:
+def _read_key_from_path(path: Path) -> Optional[str]:
     if not path.is_file():
-        return ""
+        return None
     try:
         for raw_line in path.read_text(encoding="utf-8").splitlines():
             line = raw_line.strip()
@@ -68,21 +70,23 @@ def _read_key_from_path(path: Path) -> str:
             if name.strip() == ENV_API_KEY_NAME:
                 return value.strip().strip('"').strip("'")
     except OSError:
-        return ""
-    return ""
+        return None
+    return None
 
 
 def read_saved_api_key() -> str:
-    saved = _read_key_from_path(ENV_PATH)
-    if saved:
-        return saved
-
-    for legacy_path in LEGACY_ENV_PATHS:
-        saved = _read_key_from_path(legacy_path)
-        if saved:
-            save_api_key(saved)
+    with _KEY_STORE_LOCK:
+        saved = _read_key_from_path(ENV_PATH)
+        # 空值表示用户主动清除过，不能再从旧安装副本迁移回来。
+        if saved is not None:
             return saved
-    return ""
+
+        for legacy_path in LEGACY_ENV_PATHS:
+            saved = _read_key_from_path(legacy_path)
+            if saved:
+                save_api_key(saved)
+                return saved
+        return ""
 
 
 def save_api_key(api_key: str) -> None:
@@ -91,24 +95,37 @@ def save_api_key(api_key: str) -> None:
         raise ValueError("api_key is empty")
     if "\n" in api_key or "\r" in api_key:
         raise ValueError("api_key contains an invalid newline")
+    _write_api_key(api_key)
 
-    USER_DATA_DIRECTORY.mkdir(parents=True, exist_ok=True)
-    lines: List[str] = []
-    if ENV_PATH.is_file():
-        lines = ENV_PATH.read_text(encoding="utf-8").splitlines()
-    replacement = f"{ENV_API_KEY_NAME}={api_key}"
-    replaced = False
-    for index, line in enumerate(lines):
-        if line.partition("=")[0].strip() == ENV_API_KEY_NAME:
-            lines[index] = replacement
-            replaced = True
-            break
-    if not replaced:
-        lines.append(replacement)
 
-    temporary_path = ENV_PATH.with_name(f"{ENV_PATH.name}.tmp")
-    temporary_path.write_text("\n".join(lines).rstrip() + "\n", encoding="utf-8")
-    temporary_path.replace(ENV_PATH)
+def clear_api_key() -> None:
+    _write_api_key("")
+
+
+def _write_api_key(api_key: str) -> None:
+    # 保存和清除共用原子写入，避免并发按钮操作产生不完整的密钥文件。
+    with _KEY_STORE_LOCK:
+        USER_DATA_DIRECTORY.mkdir(parents=True, exist_ok=True)
+        existing_lines = (
+            ENV_PATH.read_text(encoding="utf-8").splitlines()
+            if ENV_PATH.is_file() else []
+        )
+        lines: List[str] = []
+        replacement = f"{ENV_API_KEY_NAME}={api_key}"
+        replaced = False
+        for line in existing_lines:
+            if line.partition("=")[0].strip() == ENV_API_KEY_NAME:
+                if not replaced:
+                    lines.append(replacement)
+                    replaced = True
+            else:
+                lines.append(line)
+        if not replaced:
+            lines.append(replacement)
+
+        temporary_path = ENV_PATH.with_name(f"{ENV_PATH.name}.tmp")
+        temporary_path.write_text("\n".join(lines).rstrip() + "\n", encoding="utf-8")
+        temporary_path.replace(ENV_PATH)
 
 
 def connection_key(connection_json: str, api_key: str) -> str:
@@ -188,6 +205,17 @@ def register_image_routes() -> None:
                     }
                 },
                 status=400 if isinstance(exc, ValueError) else 500,
+            )
+
+    @routes.delete("/mengbao_image_api/api_key")
+    async def mengbao_image_api_clear_key(_request):
+        try:
+            await asyncio.to_thread(clear_api_key)
+            return web.json_response({"saved": False})
+        except Exception as exc:
+            return web.json_response(
+                {"error": {"type": exc.__class__.__name__, "message": str(exc)}},
+                status=500,
             )
 
     _ROUTES_REGISTERED = True
