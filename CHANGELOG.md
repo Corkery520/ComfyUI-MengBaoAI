@@ -12,7 +12,10 @@ All notable changes to this project are documented in this file.
 - Added Chinese and English node localization with live `Comfy.Locale` updates.
 - Added file selection and `Ctrl+V` support for image loading, preview images, and prompt JSON imports.
 - Added user-directory storage and one-time migration for saved API keys and prompt data.
-- Added Python and JavaScript regression tests for all seven nodes.
+- Added Python and JavaScript regression tests for the full node pack.
+- Added the `MengBaoEcommerceSettings` node with product information, layout,
+  typography, reverse-page, and model controls based on the MengBaoAI one-click
+  e-commerce workflow.
 
 ### Changed
 
@@ -22,6 +25,6 @@ All notable changes to this project are documented in this file.
 
 ### Compatibility
 
-- Preserved all seven historical ComfyUI node IDs.
+- Preserved all seven historical ComfyUI node IDs while adding the new e-commerce settings node.
 - Preserved `/wang_prompt_organizer/*` HTTP routes for existing frontend integrations.
 - Kept the old `mengbao-image-api` Registry package as a separate Legacy upgrade path.

@@ -74,6 +74,7 @@ jobs:
               "nodes/image_tools/split_crop.py",
               "nodes/image_tools/load_image.py",
               "nodes/prompt/organizer.py",
+              "nodes/ecommerce/settings.py",
               "api/auth.py",
               "api/image_client.py",
               "api/prompt_routes.py",

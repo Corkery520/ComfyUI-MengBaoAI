@@ -1,7 +1,7 @@
 [project]
 name = "mengbaoai"
 version = "1.0.0"
-description = "萌宝AI ComfyUI 综合节点包，集成图像生成、提示词管理与图像处理能力。"
+description = "萌宝AI ComfyUI 综合节点包，集成图像生成、电商设置、提示词管理与图像处理能力。"
 readme = "README.md"
 license = { file = "LICENSE" }
 requires-python = ">=3.9"
@@ -12,6 +12,7 @@ keywords = [
     "MengBaoAI",
     "image-generation",
     "image-processing",
+    "ecommerce",
     "prompt-management",
 ]
 classifiers = [

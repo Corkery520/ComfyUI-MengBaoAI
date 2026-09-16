@@ -152,5 +152,30 @@
       "0": { "name": "提示词" },
       "1": { "name": "状态" }
     }
+  },
+  "MengBaoEcommerceSettings": {
+    "display_name": "MengBao AI电商设置",
+    "description": "集中配置产品信息与电商图片参数，输出可复用的提示词和 JSON 设置。",
+    "inputs": {
+      "product_name": { "name": "产品名称" },
+      "copy_information": { "name": "文案信息" },
+      "special_requirements": { "name": "特殊要求" },
+      "product_size": { "name": "产品尺寸" },
+      "language": { "name": "语言" },
+      "quantity": { "name": "数量" },
+      "aspect_ratio": { "name": "比例" },
+      "usage": { "name": "用途" },
+      "page_content": { "name": "页面内容" },
+      "font_style": { "name": "字体风格" },
+      "reverse_pages": { "name": "插入反转页" },
+      "model_setting": { "name": "模特设置" },
+      "model_appearance_count": { "name": "模特出现率" }
+    },
+    "outputs": {
+      "0": { "name": "用户提示词" },
+      "1": { "name": "比例" },
+      "2": { "name": "数量" },
+      "3": { "name": "设置 JSON" }
+    }
   }
 }

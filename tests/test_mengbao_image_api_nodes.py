@@ -66,6 +66,7 @@ class MengBaoImageAPITests(unittest.TestCase):
             "WANGLoadImageUploadPaste",
             "WANGPromptOrganizer",
             "WANGPromptReader",
+            "MengBaoEcommerceSettings",
         }
         self.assertEqual(set(node_pack.NODE_CLASS_MAPPINGS), expected_ids)
         self.assertEqual(
@@ -429,6 +430,10 @@ class MengBaoImageAPITests(unittest.TestCase):
             "WANGPromptReader": (
                 "MengBaoAI Prompt Reader",
                 "萌宝AI 提示词读取",
+            ),
+            "MengBaoEcommerceSettings": (
+                "MengBao AI Ecommerce Settings",
+                "萌宝AI 电商设置",
             ),
         }
         for node_id, expected_aliases in bilingual_feature_aliases.items():

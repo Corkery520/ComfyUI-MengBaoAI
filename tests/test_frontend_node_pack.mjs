@@ -64,6 +64,69 @@ assert.equal(node.widgets[0].options.getOptionLabel("custom"), "自定义");
 assert.equal(node.outputs[3].label, "图片块数量");
 assert.equal(registeredExtension.name, "MengBaoAI.node_localization");
 
+const ecommerceNode = {
+  type: "MengBaoEcommerceSettings",
+  widgets: [
+    { name: "language", label: "language", value: "中文", options: {} },
+    { name: "quantity", label: "quantity", value: 8, options: {} },
+    { name: "usage", label: "usage", value: "详情页", options: {} },
+    { name: "page_content", label: "page_content", value: "中等", options: {} },
+    { name: "font_style", label: "font_style", value: "自动判断", options: {} },
+    { name: "reverse_pages", label: "reverse_pages", value: "插入2张", options: {} },
+    { name: "model_setting", label: "model_setting", value: "女性模特", options: {} },
+    { name: "model_appearance_count", label: "model_appearance_count", value: "8", options: {} },
+  ],
+  inputs: [],
+  outputs: [
+    { name: "user_prompt" },
+    { name: "aspect_ratio" },
+    { name: "quantity" },
+    { name: "settings_json" },
+  ],
+  setDirtyCanvas() {},
+};
+localization.configureEcommerceWidgets(ecommerceNode);
+assert.deepEqual(
+  ecommerceNode.widgets.find((widget) => widget.name === "reverse_pages").options.values,
+  ["自动判断", "不插入", "插入1张", "插入2张"],
+);
+assert.equal(
+  ecommerceNode.widgets.find((widget) => widget.name === "model_appearance_count").options.values.length,
+  9,
+);
+
+ecommerceNode.widgets.find((widget) => widget.name === "quantity").value = 4;
+ecommerceNode.widgets.find((widget) => widget.name === "quantity").callback();
+assert.equal(
+  ecommerceNode.widgets.find((widget) => widget.name === "reverse_pages").value,
+  "插入1张",
+);
+assert.equal(
+  ecommerceNode.widgets.find((widget) => widget.name === "model_appearance_count").value,
+  "4",
+);
+
+ecommerceNode.widgets.find((widget) => widget.name === "model_setting").value = "不使用模特";
+ecommerceNode.widgets.find((widget) => widget.name === "model_setting").callback();
+assert.equal(
+  ecommerceNode.widgets.find((widget) => widget.name === "model_appearance_count").value,
+  "自动判断",
+);
+
+localization.applyNodeLocalization(ecommerceNode, "zh-CN");
+assert.equal(ecommerceNode.title, "MengBao AI电商设置");
+assert.equal(ecommerceNode.widgets[0].label, "语言");
+assert.equal(ecommerceNode.widgets[1].options.getOptionLabel("详情页"), "详情页");
+assert.equal(ecommerceNode.outputs[0].label, "用户提示词");
+
+localization.applyNodeLocalization(ecommerceNode, "en");
+assert.equal(ecommerceNode.title, "MengBao AI · E-commerce Settings");
+assert.equal(ecommerceNode.widgets[0].label, "Language");
+assert.equal(ecommerceNode.widgets[0].options.getOptionLabel("中文"), "Chinese");
+assert.equal(ecommerceNode.widgets[1].options.getOptionLabel("详情页"), "Detail Pages");
+assert.equal(ecommerceNode.widgets[2].options.getOptionLabel("中等"), "Standard");
+assert.equal(ecommerceNode.outputs[0].label, "User Prompt");
+
 const loadSource = readFileSync(
   fileURLToPath(new URL("../web/js/load_image.js", import.meta.url)),
   "utf8"

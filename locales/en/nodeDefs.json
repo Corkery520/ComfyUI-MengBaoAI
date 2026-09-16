@@ -152,5 +152,30 @@
       "0": { "name": "Prompt" },
       "1": { "name": "Status" }
     }
+  },
+  "MengBaoEcommerceSettings": {
+    "display_name": "MengBao AI · E-commerce Settings",
+    "description": "Configure product details and e-commerce image parameters, then output a reusable prompt and JSON settings.",
+    "inputs": {
+      "product_name": { "name": "Product Name" },
+      "copy_information": { "name": "Copy Information" },
+      "special_requirements": { "name": "Special Requirements" },
+      "product_size": { "name": "Product Size" },
+      "language": { "name": "Language" },
+      "quantity": { "name": "Quantity" },
+      "aspect_ratio": { "name": "Aspect Ratio" },
+      "usage": { "name": "Usage" },
+      "page_content": { "name": "Page Content" },
+      "font_style": { "name": "Font Style" },
+      "reverse_pages": { "name": "Reverse Pages" },
+      "model_setting": { "name": "Model Settings" },
+      "model_appearance_count": { "name": "Model Appearance Count" }
+    },
+    "outputs": {
+      "0": { "name": "User Prompt" },
+      "1": { "name": "Aspect Ratio" },
+      "2": { "name": "Quantity" },
+      "3": { "name": "Settings JSON" }
+    }
   }
 }

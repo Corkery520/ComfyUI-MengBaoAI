@@ -68,6 +68,63 @@ const NODE_LABELS = {
       inputs: {},
       outputs: ["Prompt", "Status"],
     },
+    MengBaoEcommerceSettings: {
+      title: "MengBao AI · E-commerce Settings",
+      widgets: {
+        product_name: "Product Name",
+        copy_information: "Copy Information",
+        special_requirements: "Special Requirements",
+        product_size: "Product Size",
+        language: "Language",
+        quantity: "Quantity",
+        aspect_ratio: "Aspect Ratio",
+        usage: "Usage",
+        page_content: "Page Content",
+        font_style: "Font Style",
+        reverse_pages: "Reverse Pages",
+        model_setting: "Model Settings",
+        model_appearance_count: "Model Appearance Count",
+      },
+      inputs: {},
+      outputs: ["User Prompt", "Aspect Ratio", "Quantity", "Settings JSON"],
+      options: {
+        "中文": "Chinese",
+        "英语": "English",
+        "德语": "German",
+        "法语": "French",
+        "日语": "Japanese",
+        "韩语": "Korean",
+        "葡萄牙语": "Portuguese",
+        "主图": "Main Images",
+        "主图+详情页": "Main Images + Detail Pages",
+        "详情页": "Detail Pages",
+        "海报": "Poster",
+        "种草图": "Social Recommendation",
+        "其它": "Other",
+        "精简": "Concise",
+        "中等": "Standard",
+        "丰富": "Rich",
+        "自动判断": "Auto",
+        "现代极简无衬线字体": "Modern Minimal Sans",
+        "人文温柔无衬线字体": "Humanist Soft Sans",
+        "高级时尚衬线字体": "Premium Fashion Serif",
+        "东方雅致宋体字体": "Elegant Chinese Song",
+        "新中式书法展示字体": "New Chinese Calligraphy",
+        "圆润亲和字体": "Rounded Friendly",
+        "潮流个性展示字体": "Trendy Display",
+        "几何科技字体": "Geometric Tech",
+        "自然手作字体": "Natural Handmade",
+        "奢华品牌字体": "Luxury Brand",
+        "复古艺术字体": "Vintage Artistic",
+        "不插入": "None",
+        "插入1张": "Insert 1",
+        "插入2张": "Insert 2",
+        "插入3张": "Insert 3",
+        "不使用模特": "No Model",
+        "女性模特": "Female Model",
+        "男性模特": "Male Model",
+      },
+    },
   },
   zh: {
     ImageGridSplit: {
@@ -136,6 +193,39 @@ const NODE_LABELS = {
       inputs: {},
       outputs: ["提示词", "状态"],
     },
+    MengBaoEcommerceSettings: {
+      title: "MengBao AI电商设置",
+      widgets: {
+        product_name: "产品名称",
+        copy_information: "文案信息",
+        special_requirements: "特殊要求",
+        product_size: "产品尺寸",
+        language: "语言",
+        quantity: "数量",
+        aspect_ratio: "比例",
+        usage: "用途",
+        page_content: "页面内容",
+        font_style: "字体风格",
+        reverse_pages: "插入反转页",
+        model_setting: "模特设置",
+        model_appearance_count: "模特出现率",
+      },
+      inputs: {},
+      outputs: ["用户提示词", "比例", "数量", "设置 JSON"],
+      options: {
+        "现代极简无衬线字体": "现代极简无衬线",
+        "人文温柔无衬线字体": "人文温柔无衬线",
+        "高级时尚衬线字体": "高级时尚衬线",
+        "东方雅致宋体字体": "东方雅致宋体",
+        "新中式书法展示字体": "新中式书法展示",
+        "圆润亲和字体": "圆润亲和",
+        "潮流个性展示字体": "潮流个性展示",
+        "几何科技字体": "几何科技",
+        "自然手作字体": "自然手作",
+        "奢华品牌字体": "奢华品牌",
+        "复古艺术字体": "复古艺术",
+      },
+    },
   },
 };
 
@@ -151,6 +241,75 @@ function currentLanguage() {
 
 function nodeClass(node) {
   return node?.comfyClass || node?.type || node?.constructor?.comfyClass || "";
+}
+
+function findWidget(node, name) {
+  return (node.widgets || []).find((widget) => widget.name === name);
+}
+
+function updateEcommerceWidgetOptions(node) {
+  const quantity = Math.min(
+    25,
+    Math.max(1, Number.parseInt(findWidget(node, "quantity")?.value, 10) || 1),
+  );
+  const reverseWidget = findWidget(node, "reverse_pages");
+  const reverseMaximum = Math.min(3, Math.floor(quantity / 4));
+  const reverseValues = [
+    "自动判断",
+    "不插入",
+    ...Array.from({ length: reverseMaximum }, (_, index) => `插入${index + 1}张`),
+  ];
+  if (reverseWidget) {
+    reverseWidget.options ||= {};
+    reverseWidget.options.values = reverseValues;
+    if (!reverseValues.includes(reverseWidget.value)) {
+      reverseWidget.value = reverseMaximum > 0 ? `插入${reverseMaximum}张` : "不插入";
+    }
+  }
+
+  const modelSetting = findWidget(node, "model_setting")?.value;
+  const appearanceWidget = findWidget(node, "model_appearance_count");
+  if (appearanceWidget) {
+    appearanceWidget.options ||= {};
+    appearanceWidget.options.values =
+      modelSetting === "不使用模特"
+        ? ["自动判断"]
+        : [
+            "自动判断",
+            ...Array.from({ length: quantity }, (_, index) => String(index + 1)),
+          ];
+    if (modelSetting === "不使用模特") {
+      appearanceWidget.value = "自动判断";
+    } else if (
+      appearanceWidget.value !== "自动判断" &&
+      Number(appearanceWidget.value) > quantity
+    ) {
+      appearanceWidget.value = String(quantity);
+    }
+  }
+}
+
+function wrapEcommerceCallback(node, widget) {
+  if (!widget || widget._mengBaoEcommerceCallbackWrapped) {
+    return;
+  }
+  widget._mengBaoEcommerceCallbackWrapped = true;
+  const originalCallback = widget.callback;
+  widget.callback = function (...args) {
+    const result = originalCallback?.apply(this, args);
+    updateEcommerceWidgetOptions(node);
+    node.setDirtyCanvas?.(true, true);
+    return result;
+  };
+}
+
+function configureEcommerceWidgets(node) {
+  if (nodeClass(node) !== "MengBaoEcommerceSettings") {
+    return;
+  }
+  wrapEcommerceCallback(node, findWidget(node, "quantity"));
+  wrapEcommerceCallback(node, findWidget(node, "model_setting"));
+  updateEcommerceWidgetOptions(node);
 }
 
 function applyNodeLocalization(node, language = currentLanguage()) {
@@ -219,15 +378,19 @@ app.registerExtension({
     nodeType.prototype.onNodeCreated = function () {
       const result = onNodeCreated?.apply(this, arguments);
       applyNodeLocalization(this);
+      configureEcommerceWidgets(this);
       return result;
     };
     const onConfigure = nodeType.prototype.onConfigure;
     nodeType.prototype.onConfigure = function () {
       const result = onConfigure?.apply(this, arguments);
-      setTimeout(() => applyNodeLocalization(this), 0);
+      setTimeout(() => {
+        applyNodeLocalization(this);
+        configureEcommerceWidgets(this);
+      }, 0);
       return result;
     };
   },
 });
 
-export { applyNodeLocalization, normalizeLanguage };
+export { applyNodeLocalization, configureEcommerceWidgets, normalizeLanguage };
